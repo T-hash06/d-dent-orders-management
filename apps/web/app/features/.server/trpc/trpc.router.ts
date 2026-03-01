@@ -4,6 +4,7 @@ import { getCustomerById } from '@/features/.server/customers/get-customer-by-id
 import { getCustomers } from '@/features/.server/customers/get-customers.query';
 import { updateCustomer } from '@/features/.server/customers/update-customer.mutation';
 import { createOrder } from '@/features/.server/orders/create-order.mutation';
+import { deleteOrder } from '@/features/.server/orders/delete-order.mutation';
 import { getOrderById } from '@/features/.server/orders/get-order-by-id.query';
 import { getOrders } from '@/features/.server/orders/get-orders.query';
 import { updateOrder } from '@/features/.server/orders/update-order.mutation';
@@ -35,6 +36,7 @@ const orders = t.router({
 	getOrderById,
 	createOrder,
 	updateOrder,
+	deleteOrder,
 });
 
 export const appRouter = t.router({

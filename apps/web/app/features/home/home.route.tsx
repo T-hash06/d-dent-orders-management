@@ -18,11 +18,19 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@full-stack-template/ui';
-import { Computer, Logout01Icon, Moon, Sun } from '@hugeicons/core-free-icons';
+import {
+	Computer,
+	Logout01Icon,
+	Moon,
+	Package,
+	PackageDeliveredIcon,
+	Profile,
+	Sun,
+} from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useTheme } from 'next-themes';
 import { useCallback } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useSession } from '@/features/auth/auth.context';
 import { signOut } from '@/features/auth/auth.lib';
 import { m } from '@/features/i18n/paraglide/messages';
@@ -194,10 +202,38 @@ export default function HomeRoute() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<p className="text-sm text-muted-foreground">
-							Backend listo para exponer schemas, queries y mutations de
-							pedidos.
-						</p>
+						<div className="grid grid-cols-3 gap-3">
+							<Link
+								to="/products"
+								className="flex flex-col items-center gap-2 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors text-center"
+							>
+								<HugeiconsIcon
+									icon={Package}
+									className="h-6 w-6 text-primary"
+								/>
+								<span className="text-sm font-medium">Products</span>
+							</Link>
+							<Link
+								to="/customers"
+								className="flex flex-col items-center gap-2 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors text-center"
+							>
+								<HugeiconsIcon
+									icon={Profile}
+									className="h-6 w-6 text-primary"
+								/>
+								<span className="text-sm font-medium">Customers</span>
+							</Link>
+							<Link
+								to="/orders"
+								className="flex flex-col items-center gap-2 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors text-center"
+							>
+								<HugeiconsIcon
+									icon={PackageDeliveredIcon}
+									className="h-6 w-6 text-primary"
+								/>
+								<span className="text-sm font-medium">Orders</span>
+							</Link>
+						</div>
 					</CardContent>
 				</Card>
 			</main>

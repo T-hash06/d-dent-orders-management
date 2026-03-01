@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @import "@full-stack-template/ui/global.css";
 @source "../../../packages/ui/src";
 

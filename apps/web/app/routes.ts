@@ -12,6 +12,7 @@ export default [
 			index('features/home/home.route.tsx'),
 			route('products', 'features/products/products.route.tsx'),
 			route('customers', 'features/customers/customers.route.tsx'),
+			route('orders', 'features/orders/orders.route.tsx'),
 		]),
 		route('api/trpc/*', 'features/trpc/trpc.handler.ts'),
 		route('api/auth/*', 'features/auth/auth.handler.ts'),

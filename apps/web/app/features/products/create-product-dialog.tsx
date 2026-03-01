@@ -124,7 +124,7 @@ export function CreateProductDialog() {
 					<DialogDescription>{m.createProductDescription()}</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-8">
+				<form onSubmit={handleSubmit} className="space-y-6">
 					<FieldGroup>
 						<form.Field name="name">
 							{(field) => {
