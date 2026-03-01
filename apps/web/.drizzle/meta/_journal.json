@@ -1,0 +1,27 @@
+{
+	"version": "7",
+	"dialect": "sqlite",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "6",
+			"when": 1772062830465,
+			"tag": "0000_numerous_captain_cross",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "6",
+			"when": 1772063649194,
+			"tag": "0001_condemned_madrox",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "6",
+			"when": 1772063949345,
+			"tag": "0002_cuddly_rocket_racer",
+			"breakpoints": true
+		}
+	]
+}
