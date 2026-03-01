@@ -1,1 +1,0 @@
-ALTER TABLE `todo` ADD `description` text DEFAULT '' NOT NULL;
