@@ -10,6 +10,7 @@ export default [
 	...prefix(':locale?', [
 		layout('features/home/home.layout.tsx', [
 			index('features/home/home.route.tsx'),
+			route('products', 'features/products/products.route.tsx'),
 		]),
 		route('api/trpc/*', 'features/trpc/trpc.handler.ts'),
 		route('api/auth/*', 'features/auth/auth.handler.ts'),

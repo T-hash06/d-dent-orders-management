@@ -4,7 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"build": "react-router build",
-		"dev": "react-router dev",
+		"dev": "react-router dev --host",
 		"drizzle-kit": "drizzle-kit --config './app/features/.server/drizzle/drizzle.config.ts'",
 		"drizzle-kit:generate": "drizzle-kit generate --config './app/features/.server/drizzle/drizzle.config.ts'",
 		"drizzle-kit:migrate": "drizzle-kit migrate --config './app/features/.server/drizzle/drizzle.config.ts'",
@@ -24,6 +24,7 @@
 		"@react-router/serve": "7.13.0",
 		"@tanstack/react-form": "^1.28.3",
 		"@tanstack/react-query": "^5.90.21",
+		"@tanstack/react-table": "^8.21.3",
 		"@trpc/client": "^11.10.0",
 		"@trpc/server": "^11.10.0",
 		"@trpc/tanstack-react-query": "^11.10.0",
