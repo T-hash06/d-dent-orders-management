@@ -17,12 +17,12 @@ import {
 } from '@full-stack-template/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type SubmitEvent, useCallback, useEffect } from 'react';
+import type { Product } from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import {
 	editProductFormOptions,
 	useAppForm,
 } from '@/features/products/edit-product.form';
-import type { Product } from '@/features/products/products.columns';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 type EditProductDialogProps = {
@@ -131,7 +131,7 @@ export function EditProductDialog({
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
-					<FieldGroup className="space-y-3">
+					<FieldGroup>
 						<form.Field name="name">
 							{(field) => {
 								const isInvalid =
@@ -222,7 +222,7 @@ export function EditProductDialog({
 											name={field.name}
 											type="number"
 											min="0"
-											step="0.01"
+											step="50"
 											placeholder={m.productPricePlaceholder()}
 											aria-invalid={isInvalid}
 											value={field.state.value}
@@ -249,10 +249,10 @@ export function EditProductDialog({
 							{isLoading ? (
 								<>
 									<Spinner className="mr-2 h-4 w-4" />
-									{m.savingButton()}
+									{m.updatingButton()}
 								</>
 							) : (
-								m.saveButton()
+								m.updateButton()
 							)}
 						</Button>
 					</DialogFooter>

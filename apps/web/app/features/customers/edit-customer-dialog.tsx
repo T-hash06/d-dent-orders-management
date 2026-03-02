@@ -17,7 +17,7 @@ import {
 } from '@full-stack-template/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type SubmitEvent, useCallback, useEffect } from 'react';
-import type { Customer } from '@/features/customers/customers.columns';
+import type { Customer } from '@/features/.server/customers/customer.types';
 import {
 	editCustomerFormOptions,
 	useAppForm,
@@ -131,7 +131,7 @@ export function EditCustomerDialog({
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
-					<FieldGroup className="space-y-3">
+					<FieldGroup>
 						<form.Field name="name">
 							{(field) => {
 								const isInvalid =
@@ -246,10 +246,10 @@ export function EditCustomerDialog({
 							{isLoading ? (
 								<>
 									<Spinner className="mr-2 h-4 w-4" />
-									{m.savingButton()}
+									{m.updatingButton()}
 								</>
 							) : (
-								m.saveButton()
+								m.updateButton()
 							)}
 						</Button>
 					</DialogFooter>

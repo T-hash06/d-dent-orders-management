@@ -19,37 +19,9 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import type { ColumnDef } from '@tanstack/react-table';
+import type { Order } from '@/features/.server/orders/order.types';
 import { m } from '@/features/i18n/paraglide/messages';
-
-export type OrderItem = {
-	id: string;
-	orderId: string;
-	productId: string;
-	quantity: number;
-	price: number;
-};
-
-export type OrderCustomer = {
-	id: string;
-	name: string;
-	identifier: string;
-	phone: string;
-	address: string;
-};
-
-export type Order = {
-	id: string;
-	customerId: string;
-	assignedToUserId: string | null;
-	expectedDeliveryAt: Date;
-	deliveryAddress: string;
-	createdAt: Date;
-	updatedAt: Date;
-	createdById: string;
-	updatedById: string;
-	customer: OrderCustomer;
-	items: OrderItem[];
-};
+import { getLocale } from '@/features/i18n/paraglide/runtime';
 
 type OrderColumnsProps = {
 	onEdit: (order: Order) => void;
@@ -133,16 +105,51 @@ export function getOrderColumns({
 			),
 		},
 		{
+			accessorKey: 'status',
+			header: () => m.orderStatus(),
+			cell: ({ row }) => {
+				const status = row.original.status;
+				const label =
+					status === 'pending'
+						? m.orderStatusPending()
+						: status === 'in_progress'
+							? m.orderStatusInProgress()
+							: m.orderStatusCompleted();
+
+				const variant =
+					status === 'completed'
+						? 'default'
+						: status === 'in_progress'
+							? 'outline'
+							: 'secondary';
+
+				return (
+					<Badge variant={variant} className="font-normal text-xs">
+						{label}
+					</Badge>
+				);
+			},
+		},
+		{
 			accessorKey: 'expectedDeliveryAt',
 			header: () => m.orderExpectedDelivery(),
 			cell: ({ row }) => {
 				const date = row.getValue('expectedDeliveryAt') as Date;
-				const formatted = new Intl.DateTimeFormat('es-CO', {
+				const formatted = new Intl.DateTimeFormat(getLocale(), {
 					year: 'numeric',
 					month: 'short',
 					day: 'numeric',
 				}).format(new Date(date));
-				return <span className="text-sm tabular-nums">{formatted}</span>;
+				return (
+					<div className="flex items-center gap-2">
+						<span className="text-sm tabular-nums">{formatted}</span>
+						{row.original.isLate && (
+							<Badge variant="destructive" className="font-normal text-xs">
+								{m.orderLate()}
+							</Badge>
+						)}
+					</div>
+				);
 			},
 		},
 		{

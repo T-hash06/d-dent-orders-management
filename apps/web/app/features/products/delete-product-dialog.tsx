@@ -10,8 +10,8 @@ import {
 	toast,
 } from '@full-stack-template/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { Product } from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
-import type { Product } from '@/features/products/products.columns';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 type DeleteProductDialogProps = {

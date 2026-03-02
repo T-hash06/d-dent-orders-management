@@ -23,6 +23,12 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Separator,
 	Spinner,
 	toast,
@@ -30,10 +36,13 @@ import {
 import { Add01Icon, Delete02Icon, Plus } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { enUS, es } from 'date-fns/locale';
 import { type SubmitEvent, useCallback, useState } from 'react';
 import { m } from '@/features/i18n/paraglide/messages';
+import { getLocale } from '@/features/i18n/paraglide/runtime';
 import {
 	CREATE_ORDER_FORM_OPTIONS,
+	createOrderFormSchema,
 	useAppForm,
 } from '@/features/orders/create-order.form';
 import { useTRPC } from '@/features/trpc/trpc.context';
@@ -70,15 +79,13 @@ export function CreateOrderDialog() {
 	const form = useAppForm({
 		...CREATE_ORDER_FORM_OPTIONS,
 		onSubmit: async ({ value }) => {
+			const parsedValue = createOrderFormSchema.parse(value); // This should never fail since the form values are validated.
 			createMutation.mutate({
-				customerId: value.customerId,
-				deliveryAddress: value.deliveryAddress,
-				expectedDeliveryAt: new Date(value.expectedDeliveryAt),
-				items: value.items.map((item) => ({
-					productId: item.productId,
-					quantity: Number(item.quantity),
-					price: Number(item.price),
-				})),
+				customerId: parsedValue.customerId,
+				deliveryAddress: parsedValue.deliveryAddress,
+				expectedDeliveryAt: parsedValue.expectedDeliveryAt,
+				status: parsedValue.status,
+				items: parsedValue.items,
 			});
 		},
 	});
@@ -111,7 +118,7 @@ export function CreateOrderDialog() {
 					<DialogDescription>{m.createOrderDescription()}</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-6">
+				<form onSubmit={handleSubmit} className="space-y-4">
 					<FieldGroup>
 						<form.Field name="customerId">
 							{(field) => {
@@ -188,13 +195,6 @@ export function CreateOrderDialog() {
 							{(field) => {
 								const isInvalid =
 									field.state.meta.isTouched && !field.state.meta.isValid;
-								const parseLocalDate = (str: string) => {
-									const [y, mo, d] = str.split('-').map(Number);
-									return new Date(y, mo - 1, d);
-								};
-								const selectedDate = field.state.value
-									? parseLocalDate(field.state.value)
-									: undefined;
 								return (
 									<Field data-invalid={isInvalid}>
 										<FieldLabel htmlFor={field.name}>
@@ -215,12 +215,12 @@ export function CreateOrderDialog() {
 													/>
 												}
 											>
-												{selectedDate ? (
-													new Intl.DateTimeFormat(undefined, {
+												{field.state.value ? (
+													new Intl.DateTimeFormat(getLocale(), {
 														year: 'numeric',
 														month: 'short',
 														day: 'numeric',
-													}).format(selectedDate)
+													}).format(field.state.value)
 												) : (
 													<span className="text-muted-foreground">
 														{m.orderExpectedDeliveryPlaceholder()}
@@ -230,21 +230,63 @@ export function CreateOrderDialog() {
 											<PopoverContent className="w-auto p-0" align="start">
 												<Calendar
 													mode="single"
-													selected={selectedDate}
-													defaultMonth={selectedDate}
-													onSelect={(date) => {
-														if (date) {
-															const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-															field.handleChange(iso);
-														} else {
-															field.handleChange('');
-														}
-														field.handleBlur();
-														setDatePickerOpen(false);
-													}}
+													required={true}
+													selected={field.state.value}
+													defaultMonth={field.state.value}
+													locale={getLocale() === 'es' ? es : enUS}
+													onSelect={field.handleChange}
 												/>
 											</PopoverContent>
 										</Popover>
+										<FieldError errors={field.state.meta.errors} />
+									</Field>
+								);
+							}}
+						</form.Field>
+
+						<form.Field name="status">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>
+											{m.orderStatus()}
+										</FieldLabel>
+										<Select
+											value={field.state.value}
+											onValueChange={field.handleChange}
+											disabled={isLoading}
+											itemToStringLabel={(item) => {
+												switch (item) {
+													case 'pending':
+														return m.orderStatusPending();
+													case 'in_progress':
+														return m.orderStatusInProgress();
+													case 'completed':
+														return m.orderStatusCompleted();
+													default:
+														return item;
+												}
+											}}
+										>
+											<SelectTrigger aria-invalid={isInvalid}>
+												<SelectValue placeholder={m.orderStatusPlaceholder()} />
+											</SelectTrigger>
+											<SelectContent alignItemWithTrigger={false}>
+												<SelectGroup>
+													<SelectItem value="pending">
+														{m.orderStatusPending()}
+													</SelectItem>
+													<SelectItem value="in_progress">
+														{m.orderStatusInProgress()}
+													</SelectItem>
+													<SelectItem value="completed">
+														{m.orderStatusCompleted()}
+													</SelectItem>
+												</SelectGroup>
+											</SelectContent>
+										</Select>
 										<FieldError errors={field.state.meta.errors} />
 									</Field>
 								);
@@ -410,7 +452,7 @@ export function CreateOrderDialog() {
 																	name={field.name}
 																	type="number"
 																	min="0"
-																	step="0.01"
+																	step="50"
 																	placeholder={m.orderItemPricePlaceholder()}
 																	aria-invalid={isInvalid}
 																	value={field.state.value}
@@ -445,10 +487,10 @@ export function CreateOrderDialog() {
 							{isLoading ? (
 								<>
 									<Spinner className="mr-2 h-4 w-4" />
-									{m.savingButton()}
+									{m.creatingButton()}
 								</>
 							) : (
-								m.saveButton()
+								m.createButton()
 							)}
 						</Button>
 					</DialogFooter>

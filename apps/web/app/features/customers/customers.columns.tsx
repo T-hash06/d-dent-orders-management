@@ -18,19 +18,8 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import type { ColumnDef } from '@tanstack/react-table';
+import type { Customer } from '@/features/.server/customers/customer.types';
 import { m } from '@/features/i18n/paraglide/messages';
-
-export type Customer = {
-	id: string;
-	name: string;
-	identifier: string;
-	phone: string;
-	address: string;
-	createdAt: Date;
-	updatedAt: Date;
-	createdById: string;
-	updatedById: string;
-};
 
 type CustomerColumnsProps = {
 	onEdit: (customer: Customer) => void;

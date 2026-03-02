@@ -5,6 +5,7 @@ import { orderItems, orders } from '@/features/.server/orders/order.schema';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
 import { procedures } from '@/features/.server/trpc/trpc.init';
 import { m } from '@/features/i18n/paraglide/messages';
+import { ORDER_STATUS_VALUES } from '@/features/orders/order-status';
 
 const updateOrderItemInput = z.object({
 	productId: z
@@ -64,7 +65,10 @@ const updateOrderInput = z.object({
 		})
 		.nullable()
 		.optional(),
-	expectedDeliveryAt: z.coerce.date({
+	expectedDeliveryAt: z.coerce.date<string>({
+		error: () => m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
+	}),
+	status: z.enum(ORDER_STATUS_VALUES, {
 		error: () => m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
 	}),
 	deliveryAddress: z
@@ -89,6 +93,7 @@ export const updateOrder = procedures.auth
 					customerId: input.customerId,
 					assignedToUserId: input.assignedToUserId ?? null,
 					expectedDeliveryAt: input.expectedDeliveryAt,
+					status: input.status,
 					deliveryAddress: input.deliveryAddress,
 					updatedById: ctx.user.id,
 				})

@@ -31,7 +31,6 @@ export * from './components/kbd';
 export * from './components/label';
 export * from './components/link';
 export * from './components/menubar';
-export * from './components/native-select';
 export * from './components/navigation-menu';
 export * from './components/pagination';
 export * from './components/popover';

@@ -20,12 +20,12 @@ import { Plus } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type SubmitEvent, useCallback, useState } from 'react';
+import type { Product } from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import {
 	CREATE_PRODUCT_FORM_OPTIONS,
 	useAppForm,
 } from '@/features/products/create-product.form';
-import type { Product } from '@/features/products/products.columns';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 export function CreateProductDialog() {
@@ -124,7 +124,7 @@ export function CreateProductDialog() {
 					<DialogDescription>{m.createProductDescription()}</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-6">
+				<form onSubmit={handleSubmit} className="space-y-4">
 					<FieldGroup>
 						<form.Field name="name">
 							{(field) => {
@@ -243,10 +243,10 @@ export function CreateProductDialog() {
 							{isLoading ? (
 								<>
 									<Spinner className="mr-2 h-4 w-4" />
-									{m.savingButton()}
+									{m.creatingButton()}
 								</>
 							) : (
-								m.saveButton()
+								m.createButton()
 							)}
 						</Button>
 					</DialogFooter>

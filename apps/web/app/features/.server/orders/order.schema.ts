@@ -4,6 +4,7 @@ import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { users } from '@/features/.server/auth/auth.schema';
 import { customers } from '@/features/.server/customers/customer.schema';
 import { products } from '@/features/.server/products/product.schema';
+import { ORDER_STATUS_VALUES } from '@/features/orders/order-status';
 
 export const orders = sqliteTable('orders', {
 	id: text('id')
@@ -16,6 +17,11 @@ export const orders = sqliteTable('orders', {
 	expectedDeliveryAt: integer('expected_delivery_at', {
 		mode: 'timestamp_ms',
 	}).notNull(),
+	status: text('status', {
+		enum: ORDER_STATUS_VALUES,
+	})
+		.notNull()
+		.default('pending'),
 	deliveryAddress: text('delivery_address').notNull(),
 	createdAt: integer('created_at', { mode: 'timestamp_ms' })
 		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

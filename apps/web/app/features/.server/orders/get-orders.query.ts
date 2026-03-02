@@ -3,6 +3,7 @@ import { customers } from '@/features/.server/customers/customer.schema';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import { orderItems, orders } from '@/features/.server/orders/order.schema';
 import { procedures } from '@/features/.server/trpc/trpc.init';
+import { isOrderLate } from '@/features/orders/order-status';
 
 export const getOrders = procedures.auth.query(async () => {
 	const ordersRows = await db.select().from(orders);
@@ -33,6 +34,7 @@ export const getOrders = procedures.auth.query(async () => {
 
 			return {
 				...order,
+				isLate: isOrderLate(order.status, order.expectedDeliveryAt),
 				customer,
 				items,
 			};

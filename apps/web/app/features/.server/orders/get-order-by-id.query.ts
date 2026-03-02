@@ -6,6 +6,7 @@ import { orderItems, orders } from '@/features/.server/orders/order.schema';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
 import { procedures } from '@/features/.server/trpc/trpc.init';
 import { m } from '@/features/i18n/paraglide/messages';
+import { isOrderLate } from '@/features/orders/order-status';
 
 const getOrderByIdInput = z.object({
 	id: z
@@ -53,6 +54,7 @@ export const getOrderById = procedures.auth
 
 		return {
 			...order,
+			isLate: isOrderLate(order.status, order.expectedDeliveryAt),
 			customer,
 			items,
 		};

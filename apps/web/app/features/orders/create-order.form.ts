@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-form';
 import * as z from 'zod';
 import { m } from '@/features/i18n/paraglide/messages';
+import { ORDER_STATUS_VALUES } from '@/features/orders/order-status';
 
 export const { fieldContext, formContext } = createFormHookContexts();
 
@@ -17,7 +18,8 @@ export const orderItemFormState = z.object({
 export const createOrderFormState = z.object({
 	customerId: z.string(),
 	deliveryAddress: z.string(),
-	expectedDeliveryAt: z.string(),
+	expectedDeliveryAt: z.date(),
+	status: z.string().nullable(),
 	items: z.array(orderItemFormState),
 });
 
@@ -28,8 +30,11 @@ export const createOrderFormSchema = z.object({
 	deliveryAddress: z.string().min(1, {
 		error: m.createOrderAddressRequired(),
 	}),
-	expectedDeliveryAt: z.string().min(1, {
+	expectedDeliveryAt: z.coerce.string<Date>({
 		error: m.createOrderDateRequired(),
+	}),
+	status: z.enum(ORDER_STATUS_VALUES, {
+		error: m.createOrderStatusRequired(),
 	}),
 	items: z
 		.array(
@@ -37,10 +42,10 @@ export const createOrderFormSchema = z.object({
 				productId: z.string().min(1, {
 					error: m.createOrderItemProductRequired(),
 				}),
-				quantity: z.string().min(1, {
+				quantity: z.coerce.number<string>().min(1, {
 					error: m.createOrderItemQuantityInvalid(),
 				}),
-				price: z.string().min(1, {
+				price: z.coerce.number<string>().min(1, {
 					error: m.createOrderItemPriceInvalid(),
 				}),
 			}),
@@ -51,7 +56,8 @@ export const createOrderFormSchema = z.object({
 const DEFAULT_CREATE_ORDER_FORM_VALUES: z.infer<typeof createOrderFormState> = {
 	customerId: '',
 	deliveryAddress: '',
-	expectedDeliveryAt: '',
+	expectedDeliveryAt: new Date(),
+	status: 'pending',
 	items: [{ productId: '', quantity: '1', price: '' }],
 };
 

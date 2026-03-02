@@ -34,11 +34,9 @@ import {
 	type VisibilityState,
 } from '@tanstack/react-table';
 import { useState } from 'react';
+import type { Customer } from '@/features/.server/customers/customer.types';
 import { CreateCustomerDialog } from '@/features/customers/create-customer-dialog';
-import {
-	type Customer,
-	getCustomerColumns,
-} from '@/features/customers/customers.columns';
+import { getCustomerColumns } from '@/features/customers/customers.columns';
 import { DeleteCustomerDialog } from '@/features/customers/delete-customer-dialog';
 import { EditCustomerDialog } from '@/features/customers/edit-customer-dialog';
 import { m } from '@/features/i18n/paraglide/messages';

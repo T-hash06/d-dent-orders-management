@@ -20,11 +20,11 @@ import { Plus } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type SubmitEvent, useCallback, useState } from 'react';
+import type { Customer } from '@/features/.server/customers/customer.types';
 import {
 	CREATE_CUSTOMER_FORM_OPTIONS,
 	useAppForm,
 } from '@/features/customers/create-customer.form';
-import type { Customer } from '@/features/customers/customers.columns';
 import { m } from '@/features/i18n/paraglide/messages';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
@@ -124,7 +124,7 @@ export function CreateCustomerDialog() {
 					<DialogDescription>{m.createCustomerDescription()}</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-8">
+				<form onSubmit={handleSubmit} className="space-y-4">
 					<FieldGroup>
 						<form.Field name="name">
 							{(field) => {
@@ -240,10 +240,10 @@ export function CreateCustomerDialog() {
 							{isLoading ? (
 								<>
 									<Spinner className="mr-2 h-4 w-4" />
-									{m.savingButton()}
+									{m.creatingButton()}
 								</>
 							) : (
-								m.saveButton()
+								m.createButton()
 							)}
 						</Button>
 					</DialogFooter>

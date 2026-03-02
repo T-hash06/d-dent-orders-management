@@ -10,8 +10,8 @@ import {
 	toast,
 } from '@full-stack-template/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { Order } from '@/features/.server/orders/order.types';
 import { m } from '@/features/i18n/paraglide/messages';
-import type { Order } from '@/features/orders/orders.columns';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 type DeleteOrderDialogProps = {

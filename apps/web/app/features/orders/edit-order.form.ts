@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-form';
 import * as z from 'zod';
 import { m } from '@/features/i18n/paraglide/messages';
+import { ORDER_STATUS_VALUES } from '@/features/orders/order-status';
 
 export const { fieldContext, formContext } = createFormHookContexts();
 
@@ -17,50 +18,54 @@ const orderItemFormState = z.object({
 const editOrderFormState = z.object({
 	customerId: z.string(),
 	deliveryAddress: z.string(),
-	expectedDeliveryAt: z.string(),
+	expectedDeliveryAt: z.date(),
+	status: z.string().nullable(),
 	items: z.array(orderItemFormState),
 });
 
 export const editOrderFormSchema = z.object({
 	customerId: z.string().min(1, {
-		error: m.createOrderCustomerRequired(),
+		error: m.editOrderCustomerRequired(),
 	}),
 	deliveryAddress: z.string().min(1, {
-		error: m.createOrderAddressRequired(),
+		error: m.editOrderAddressRequired(),
 	}),
-	expectedDeliveryAt: z.string().min(1, {
-		error: m.createOrderDateRequired(),
+	expectedDeliveryAt: z.coerce.string<Date>().min(1, {
+		error: m.editOrderDateRequired(),
+	}),
+	status: z.enum(ORDER_STATUS_VALUES, {
+		error: m.editOrderStatusRequired(),
 	}),
 	items: z
 		.array(
 			z.object({
 				productId: z.string().min(1, {
-					error: m.createOrderItemProductRequired(),
+					error: m.editOrderItemProductRequired(),
 				}),
-				quantity: z.string().min(1, {
-					error: m.createOrderItemQuantityInvalid(),
+				quantity: z.coerce.number<string>().min(1, {
+					error: m.editOrderItemQuantityInvalid(),
 				}),
-				price: z.string().min(1, {
-					error: m.createOrderItemPriceInvalid(),
+				price: z.coerce.number<string>().min(1, {
+					error: m.editOrderItemPriceInvalid(),
 				}),
 			}),
 		)
-		.min(1, { error: m.createOrderItemsRequired() }),
+		.min(1, { error: m.editOrderItemsRequired() }),
 });
 
 export function editOrderFormOptions(defaultValues: {
 	customerId: string;
 	deliveryAddress: string;
 	expectedDeliveryAt: Date;
+	status: string | null;
 	items: { productId: string; quantity: number; price: number }[];
 }) {
 	return formOptions({
 		defaultValues: {
 			customerId: defaultValues.customerId,
 			deliveryAddress: defaultValues.deliveryAddress,
-			expectedDeliveryAt: defaultValues.expectedDeliveryAt
-				.toISOString()
-				.substring(0, 10),
+			expectedDeliveryAt: new Date(defaultValues.expectedDeliveryAt),
+			status: defaultValues.status,
 			items: defaultValues.items.map((item) => ({
 				productId: item.productId,
 				quantity: String(item.quantity),

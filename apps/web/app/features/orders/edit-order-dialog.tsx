@@ -22,6 +22,12 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Separator,
 	Spinner,
 	toast,
@@ -29,13 +35,16 @@ import {
 import { Add01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { enUS, es } from 'date-fns/locale';
 import { type SubmitEvent, useCallback, useEffect, useState } from 'react';
+import type { Order } from '@/features/.server/orders/order.types';
 import { m } from '@/features/i18n/paraglide/messages';
+import { getLocale } from '@/features/i18n/paraglide/runtime';
 import {
 	editOrderFormOptions,
+	editOrderFormSchema,
 	useAppForm,
 } from '@/features/orders/edit-order.form';
-import type { Order } from '@/features/orders/orders.columns';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 type EditOrderDialogProps = {
@@ -49,6 +58,7 @@ export function EditOrderDialog({
 	open,
 	onOpenChange,
 }: EditOrderDialogProps) {
+	const [datePickerOpen, setDatePickerOpen] = useState(false);
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
 
@@ -79,39 +89,38 @@ export function EditOrderDialog({
 			customerId: order?.customerId ?? '',
 			deliveryAddress: order?.deliveryAddress ?? '',
 			expectedDeliveryAt: order?.expectedDeliveryAt ?? new Date(),
+			status: order?.status ?? 'pending',
 			items: order?.items ?? [{ productId: '', quantity: 1, price: 0 }],
 		}),
 		onSubmit: async ({ value }) => {
 			if (!order) return;
+
+			const parsedValue = editOrderFormSchema.parse(value); // This should never fail since the form values are validated.
 			updateMutation.mutate({
 				id: order.id,
-				customerId: value.customerId,
-				deliveryAddress: value.deliveryAddress,
-				expectedDeliveryAt: new Date(value.expectedDeliveryAt),
-				items: value.items.map((item) => ({
-					productId: item.productId,
-					quantity: Number(item.quantity),
-					price: Number(item.price),
-				})),
+				customerId: parsedValue.customerId,
+				deliveryAddress: parsedValue.deliveryAddress,
+				expectedDeliveryAt: parsedValue.expectedDeliveryAt,
+				status: parsedValue.status,
+				items: parsedValue.items,
 			});
 		},
 	});
 
 	useEffect(() => {
-		if (order) {
-			form.reset({
-				customerId: order.customerId,
-				deliveryAddress: order.deliveryAddress,
-				expectedDeliveryAt: new Date(order.expectedDeliveryAt)
-					.toISOString()
-					.substring(0, 10),
-				items: order.items.map((item) => ({
-					productId: item.productId,
-					quantity: String(item.quantity),
-					price: String(item.price),
-				})),
-			});
-		}
+		if (!order) return;
+
+		form.reset({
+			customerId: order.customerId,
+			deliveryAddress: order.deliveryAddress,
+			expectedDeliveryAt: order.expectedDeliveryAt,
+			status: order.status,
+			items: order.items.map((item) => ({
+				productId: item.productId,
+				quantity: String(item.quantity),
+				price: String(item.price),
+			})),
+		});
 	}, [order, form]);
 
 	const handleSubmit = useCallback(
@@ -123,7 +132,6 @@ export function EditOrderDialog({
 	);
 
 	const isLoading = updateMutation.isPending;
-	const [datePickerOpen, setDatePickerOpen] = useState(false);
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -133,49 +141,62 @@ export function EditOrderDialog({
 					<DialogDescription>{m.editOrderDescription()}</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-6">
-					<FieldGroup className="space-y-4">
-						{/* Customer */}
+				<form onSubmit={handleSubmit} className="space-y-4">
+					<FieldGroup>
 						<form.Field name="customerId">
 							{(field) => {
 								const isInvalid =
 									field.state.meta.isTouched && !field.state.meta.isValid;
+								const selectedCustomer =
+									customers.find(
+										(customer) => customer.id === field.state.value,
+									) ?? null;
+
 								return (
 									<Field data-invalid={isInvalid}>
-										<FieldLabel>{m.orderCustomer()}</FieldLabel>
-										<Combobox
-											value={field.state.value}
-											onValueChange={(val) => field.handleChange(val ?? '')}
-											disabled={isLoading}
-										>
-											<ComboboxInput
-												placeholder={m.orderCustomerPlaceholder()}
-												aria-invalid={isInvalid}
-												onBlur={() => field.handleBlur()}
-												className="w-full"
-											/>
-											<ComboboxContent>
-												<ComboboxList>
+										<FieldLabel htmlFor={field.name}>
+											{m.orderCustomer()}
+										</FieldLabel>
+										<div>
+											<Combobox
+												value={selectedCustomer}
+												onValueChange={(value) =>
+													field.handleChange(value?.id ?? '')
+												}
+												disabled={isLoading}
+												items={customers}
+												itemToStringLabel={(item) => item.name}
+											>
+												<ComboboxInput
+													id={field.name}
+													name={field.name}
+													placeholder={m.orderCustomerPlaceholder()}
+													aria-invalid={isInvalid}
+													onBlur={() => field.handleBlur()}
+												/>
+												<ComboboxContent>
 													<ComboboxEmpty>{m.noResults()}</ComboboxEmpty>
-													{customers.map((c) => (
-														<ComboboxItem key={c.id} value={c.id}>
-															{c.name}
-														</ComboboxItem>
-													))}
-												</ComboboxList>
-											</ComboboxContent>
-										</Combobox>
+													<ComboboxList>
+														{(item) => (
+															<ComboboxItem key={item.id} value={item}>
+																{item.name}
+															</ComboboxItem>
+														)}
+													</ComboboxList>
+												</ComboboxContent>
+											</Combobox>
+										</div>
 										<FieldError errors={field.state.meta.errors} />
 									</Field>
 								);
 							}}
 						</form.Field>
 
-						{/* Delivery Address */}
 						<form.Field name="deliveryAddress">
 							{(field) => {
 								const isInvalid =
 									field.state.meta.isTouched && !field.state.meta.isValid;
+
 								return (
 									<Field data-invalid={isInvalid}>
 										<FieldLabel htmlFor={field.name}>
@@ -197,21 +218,16 @@ export function EditOrderDialog({
 							}}
 						</form.Field>
 
-						{/* Expected Delivery Date */}
 						<form.Field name="expectedDeliveryAt">
 							{(field) => {
 								const isInvalid =
 									field.state.meta.isTouched && !field.state.meta.isValid;
-								const parseLocalDate = (str: string) => {
-									const [y, mo, d] = str.split('-').map(Number);
-									return new Date(y, mo - 1, d);
-								};
-								const selectedDate = field.state.value
-									? parseLocalDate(field.state.value)
-									: undefined;
+
 								return (
 									<Field data-invalid={isInvalid}>
-										<FieldLabel>{m.orderExpectedDelivery()}</FieldLabel>
+										<FieldLabel htmlFor={field.name}>
+											{m.orderExpectedDelivery()}
+										</FieldLabel>
 										<Popover
 											open={datePickerOpen}
 											onOpenChange={setDatePickerOpen}
@@ -227,12 +243,12 @@ export function EditOrderDialog({
 													/>
 												}
 											>
-												{selectedDate ? (
-													new Intl.DateTimeFormat(undefined, {
+												{field.state.value ? (
+													new Intl.DateTimeFormat(getLocale(), {
 														year: 'numeric',
 														month: 'short',
 														day: 'numeric',
-													}).format(selectedDate)
+													}).format(field.state.value)
 												) : (
 													<span className="text-muted-foreground">
 														{m.orderExpectedDeliveryPlaceholder()}
@@ -242,18 +258,11 @@ export function EditOrderDialog({
 											<PopoverContent className="w-auto p-0" align="start">
 												<Calendar
 													mode="single"
-													selected={selectedDate}
-													defaultMonth={selectedDate}
-													onSelect={(date) => {
-														if (date) {
-															const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-															field.handleChange(iso);
-														} else {
-															field.handleChange('');
-														}
-														field.handleBlur();
-														setDatePickerOpen(false);
-													}}
+													required={true}
+													selected={field.state.value}
+													defaultMonth={field.state.value}
+													locale={getLocale() === 'es' ? es : enUS}
+													onSelect={field.handleChange}
 												/>
 											</PopoverContent>
 										</Popover>
@@ -262,9 +271,57 @@ export function EditOrderDialog({
 								);
 							}}
 						</form.Field>
+
+						<form.Field name="status">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>
+											{m.orderStatus()}
+										</FieldLabel>
+										<Select
+											value={field.state.value}
+											onValueChange={field.handleChange}
+											disabled={isLoading}
+											itemToStringLabel={(item) => {
+												switch (item) {
+													case 'pending':
+														return m.orderStatusPending();
+													case 'in_progress':
+														return m.orderStatusInProgress();
+													case 'completed':
+														return m.orderStatusCompleted();
+													default:
+														return item;
+												}
+											}}
+										>
+											<SelectTrigger aria-invalid={isInvalid}>
+												<SelectValue placeholder={m.orderStatusPlaceholder()} />
+											</SelectTrigger>
+											<SelectContent alignItemWithTrigger={false}>
+												<SelectGroup>
+													<SelectItem value="pending">
+														{m.orderStatusPending()}
+													</SelectItem>
+													<SelectItem value="in_progress">
+														{m.orderStatusInProgress()}
+													</SelectItem>
+													<SelectItem value="completed">
+														{m.orderStatusCompleted()}
+													</SelectItem>
+												</SelectGroup>
+											</SelectContent>
+										</Select>
+										<FieldError errors={field.state.meta.errors} />
+									</Field>
+								);
+							}}
+						</form.Field>
 					</FieldGroup>
 
-					{/* Order Items */}
 					<div className="space-y-3">
 						<div className="flex items-center justify-between">
 							<p className="text-sm font-medium">{m.orderItems()}</p>
@@ -328,35 +385,49 @@ export function EditOrderDialog({
 													const isInvalid =
 														field.state.meta.isTouched &&
 														!field.state.meta.isValid;
+
+													const selectedProduct =
+														products.find(
+															(product) => product.id === field.state.value,
+														) ?? null;
+
 													return (
 														<Field data-invalid={isInvalid}>
 															<FieldLabel>{m.orderItemProduct()}</FieldLabel>
-															<Combobox
-																value={field.state.value}
-																onValueChange={(val) =>
-																	field.handleChange(val ?? '')
-																}
-																disabled={isLoading}
-															>
-																<ComboboxInput
-																	placeholder={m.orderItemProductPlaceholder()}
-																	aria-invalid={isInvalid}
-																	onBlur={() => field.handleBlur()}
-																	className="w-full"
-																/>
-																<ComboboxContent>
-																	<ComboboxList>
+															<div>
+																<Combobox
+																	value={selectedProduct}
+																	onValueChange={(value) =>
+																		field.handleChange(value?.id ?? '')
+																	}
+																	disabled={isLoading}
+																	items={products}
+																	itemToStringLabel={(item) => item.name}
+																>
+																	<ComboboxInput
+																		id={field.name}
+																		name={field.name}
+																		placeholder={m.orderItemProductPlaceholder()}
+																		aria-invalid={isInvalid}
+																		onBlur={() => field.handleBlur()}
+																	/>
+																	<ComboboxContent>
 																		<ComboboxEmpty>
 																			{m.noResults()}
 																		</ComboboxEmpty>
-																		{products.map((p) => (
-																			<ComboboxItem key={p.id} value={p.id}>
-																				{p.name} — {p.variant}
-																			</ComboboxItem>
-																		))}
-																	</ComboboxList>
-																</ComboboxContent>
-															</Combobox>
+																		<ComboboxList>
+																			{(item) => (
+																				<ComboboxItem
+																					key={item.id}
+																					value={item}
+																				>
+																					{item.name}
+																				</ComboboxItem>
+																			)}
+																		</ComboboxList>
+																	</ComboboxContent>
+																</Combobox>
+															</div>
 															<FieldError errors={field.state.meta.errors} />
 														</Field>
 													);
@@ -369,6 +440,7 @@ export function EditOrderDialog({
 														const isInvalid =
 															field.state.meta.isTouched &&
 															!field.state.meta.isValid;
+
 														return (
 															<Field data-invalid={isInvalid}>
 																<FieldLabel htmlFor={field.name}>
@@ -400,6 +472,7 @@ export function EditOrderDialog({
 														const isInvalid =
 															field.state.meta.isTouched &&
 															!field.state.meta.isValid;
+
 														return (
 															<Field data-invalid={isInvalid}>
 																<FieldLabel htmlFor={field.name}>
@@ -410,7 +483,7 @@ export function EditOrderDialog({
 																	name={field.name}
 																	type="number"
 																	min="0"
-																	step="0.01"
+																	step="50"
 																	placeholder={m.orderItemPricePlaceholder()}
 																	aria-invalid={isInvalid}
 																	value={field.state.value}
@@ -445,10 +518,10 @@ export function EditOrderDialog({
 							{isLoading ? (
 								<>
 									<Spinner className="mr-2 h-4 w-4" />
-									{m.savingButton()}
+									{m.updatingButton()}
 								</>
 							) : (
-								m.saveButton()
+								m.updateButton()
 							)}
 						</Button>
 					</DialogFooter>

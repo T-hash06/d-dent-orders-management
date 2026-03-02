@@ -34,11 +34,12 @@ import {
 	type VisibilityState,
 } from '@tanstack/react-table';
 import { useState } from 'react';
+import type { Order } from '@/features/.server/orders/order.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import { CreateOrderDialog } from '@/features/orders/create-order-dialog';
 import { DeleteOrderDialog } from '@/features/orders/delete-order-dialog';
 import { EditOrderDialog } from '@/features/orders/edit-order-dialog';
-import { getOrderColumns, type Order } from '@/features/orders/orders.columns';
+import { getOrderColumns } from '@/features/orders/orders.columns';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 export default function OrdersRoute() {

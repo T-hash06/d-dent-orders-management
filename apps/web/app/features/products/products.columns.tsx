@@ -19,19 +19,8 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import type { ColumnDef } from '@tanstack/react-table';
+import type { Product } from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
-
-export type Product = {
-	id: string;
-	name: string;
-	type: string;
-	variant: string;
-	price: number;
-	createdAt: Date;
-	updatedAt: Date;
-	createdById: string;
-	updatedById: string;
-};
 
 type ProductColumnsProps = {
 	onEdit: (product: Product) => void;
