@@ -131,7 +131,7 @@ export default function OrdersRoute() {
 											checked={col.getIsVisible()}
 											onCheckedChange={(value) => col.toggleVisibility(!!value)}
 										>
-											{col.id}
+											{col.columnDef.meta?.name}
 										</DropdownMenuCheckboxItem>
 									))}
 							</DropdownMenuGroup>

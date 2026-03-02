@@ -35,6 +35,9 @@ export function getOrderColumns({
 	return [
 		{
 			id: 'select',
+			meta: {
+				name: m.selectAll(),
+			},
 			header: ({ table }) => (
 				<Checkbox
 					checked={table.getIsAllPageRowsSelected()}
@@ -59,6 +62,10 @@ export function getOrderColumns({
 		{
 			accessorKey: 'customer',
 			id: 'customer',
+			meta: {
+				name: m.orderCustomer(),
+			},
+			enableHiding: false,
 			header: ({ column }) => (
 				<Button
 					variant="ghost"
@@ -98,6 +105,9 @@ export function getOrderColumns({
 		{
 			accessorKey: 'deliveryAddress',
 			header: () => m.orderDeliveryAddress(),
+			meta: {
+				name: m.orderDeliveryAddress(),
+			},
 			cell: ({ row }) => (
 				<span className="text-sm text-muted-foreground max-w-50 truncate block">
 					{row.getValue('deliveryAddress')}
@@ -107,6 +117,9 @@ export function getOrderColumns({
 		{
 			accessorKey: 'status',
 			header: () => m.orderStatus(),
+			meta: {
+				name: m.orderStatus(),
+			},
 			cell: ({ row }) => {
 				const status = row.original.status;
 				const label =
@@ -133,6 +146,9 @@ export function getOrderColumns({
 		{
 			accessorKey: 'expectedDeliveryAt',
 			header: () => m.orderExpectedDelivery(),
+			meta: {
+				name: m.orderExpectedDelivery(),
+			},
 			cell: ({ row }) => {
 				const date = row.getValue('expectedDeliveryAt') as Date;
 				const formatted = new Intl.DateTimeFormat(getLocale(), {
@@ -155,6 +171,9 @@ export function getOrderColumns({
 		{
 			id: 'items',
 			header: () => m.orderItems(),
+			meta: {
+				name: m.orderItems(),
+			},
 			cell: ({ row }) => {
 				const items = row.original.items;
 				return (
@@ -167,6 +186,9 @@ export function getOrderColumns({
 		{
 			id: 'total',
 			header: () => <div className="text-right">{m.orderTotal()}</div>,
+			meta: {
+				name: m.orderTotal(),
+			},
 			cell: ({ row }) => {
 				const total = row.original.items.reduce(
 					(sum, item) => sum + item.price * item.quantity,
