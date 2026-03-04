@@ -52,6 +52,9 @@ export function getProductColumns({
 					aria-label={m.selectRow()}
 				/>
 			),
+			meta: {
+				name: m.selectAll(),
+			},
 			enableSorting: false,
 			enableHiding: false,
 		},
@@ -77,6 +80,9 @@ export function getProductColumns({
 			cell: ({ row }) => (
 				<span className="font-medium text-sm">{row.getValue('name')}</span>
 			),
+			meta: {
+				name: m.productName(),
+			},
 		},
 		{
 			accessorKey: 'type',
@@ -86,6 +92,9 @@ export function getProductColumns({
 					{row.getValue('type')}
 				</Badge>
 			),
+			meta: {
+				name: m.productType(),
+			},
 		},
 		{
 			accessorKey: 'variant',
@@ -95,6 +104,9 @@ export function getProductColumns({
 					{row.getValue('variant')}
 				</span>
 			),
+			meta: {
+				name: m.productVariant(),
+			},
 		},
 		{
 			accessorKey: 'price',
@@ -111,6 +123,9 @@ export function getProductColumns({
 						{formatted}
 					</div>
 				);
+			},
+			meta: {
+				name: m.productPrice(),
 			},
 		},
 		{
@@ -160,6 +175,9 @@ export function getProductColumns({
 						</DropdownMenu>
 					</div>
 				);
+			},
+			meta: {
+				name: m.productActions(),
 			},
 		},
 	];

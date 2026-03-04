@@ -51,6 +51,9 @@ export function getCustomerColumns({
 					aria-label={m.selectRow()}
 				/>
 			),
+			meta: {
+				name: m.selectAll(),
+			},
 			enableSorting: false,
 			enableHiding: false,
 		},
@@ -76,6 +79,9 @@ export function getCustomerColumns({
 			cell: ({ row }) => (
 				<span className="font-medium text-sm">{row.getValue('name')}</span>
 			),
+			meta: {
+				name: m.customerName(),
+			},
 		},
 		{
 			accessorKey: 'identifier',
@@ -85,6 +91,9 @@ export function getCustomerColumns({
 					{row.getValue('identifier')}
 				</span>
 			),
+			meta: {
+				name: m.customerIdentifier(),
+			},
 		},
 		{
 			accessorKey: 'phone',
@@ -94,6 +103,9 @@ export function getCustomerColumns({
 					{row.getValue('phone')}
 				</span>
 			),
+			meta: {
+				name: m.customerPhone(),
+			},
 		},
 		{
 			accessorKey: 'address',
@@ -103,6 +115,9 @@ export function getCustomerColumns({
 					{row.getValue('address')}
 				</span>
 			),
+			meta: {
+				name: m.customerAddress(),
+			},
 		},
 		{
 			id: 'actions',
@@ -150,6 +165,9 @@ export function getCustomerColumns({
 						</DropdownMenu>
 					</div>
 				);
+			},
+			meta: {
+				name: m.customerActions(),
 			},
 		},
 	];
