@@ -14,6 +14,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	toast,
 } from '@full-stack-template/ui';
 import {
 	ArrowLeft01Icon,
@@ -21,7 +22,7 @@ import {
 	FilterHorizontalIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
 	type ColumnFiltersState,
 	flexRender,
@@ -44,8 +45,51 @@ import { useTRPC } from '@/features/trpc/trpc.context';
 
 export default function OrdersRoute() {
 	const trpc = useTRPC();
+	const queryClient = useQueryClient();
 	const { data: orders = [], isLoading } = useQuery(
 		trpc.orders.getOrders.queryOptions(),
+	);
+
+	const completeMutation = useMutation(
+		trpc.orders.completeOrder.mutationOptions({
+			onMutate: async (variables) => {
+				await queryClient.cancelQueries({
+					queryKey: trpc.orders.getOrders.queryKey(),
+				});
+
+				const previous = queryClient.getQueryData(
+					trpc.orders.getOrders.queryKey(),
+				);
+
+				queryClient.setQueryData(
+					trpc.orders.getOrders.queryKey(),
+					(old: Order[] | undefined) =>
+						(old ?? []).map((o) =>
+							o.id === variables.orderId ? { ...o, status: 'completed' } : o,
+						),
+				);
+
+				return { previous };
+			},
+			onError: (error, _vars, context) => {
+				if (context?.previous) {
+					queryClient.setQueryData(
+						trpc.orders.getOrders.queryKey(),
+						context.previous,
+					);
+				}
+
+				toast.error(
+					error.data?.zodError?.orderId.message ?? m.completeOrderFailed(),
+				);
+			},
+			onSuccess: () => {
+				toast.success(m.completeOrderSuccess());
+				queryClient.invalidateQueries({
+					queryKey: trpc.orders.getOrders.queryKey(),
+				});
+			},
+		}),
 	);
 
 	const [sorting, setSorting] = useState<SortingState>([]);
@@ -59,6 +103,9 @@ export default function OrdersRoute() {
 	const columns = getOrderColumns({
 		onEdit: (order) => setEditOrder(order),
 		onDelete: (order) => setDeleteOrder(order),
+		onComplete: (order) => {
+			completeMutation.mutate({ orderId: order.id });
+		},
 	});
 
 	const table = useReactTable({

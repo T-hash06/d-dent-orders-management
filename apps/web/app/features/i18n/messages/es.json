@@ -260,6 +260,8 @@
 	"deleteOrderConfirm": "Eliminar",
 	"orderCustomer": "Cliente",
 	"orderCustomerPlaceholder": "Selecciona un cliente...",
+	"orderAssignedTo": "Asignado a",
+	"orderAssignedToPlaceholder": "Selecciona un usuario...",
 	"orderDeliveryAddress": "Dirección de entrega",
 	"orderDeliveryAddressPlaceholder": "p. ej. Calle 123 #45-67",
 	"orderExpectedDelivery": "Entrega esperada",
@@ -300,5 +302,10 @@
 	"editOrderItemQuantityInvalid": "La cantidad debe ser un entero positivo",
 	"editOrderItemPriceInvalid": "El precio debe ser un número no negativo",
 	"noResults": "Sin resultados.",
-	"orderExpectedDeliveryPlaceholder": "Selecciona una fecha..."
+	"orderExpectedDeliveryPlaceholder": "Selecciona una fecha...",
+	"orderNotFound": "No se encontró el pedido.",
+	"orderNotOwnedByUser": "No tienes permiso para completar este pedido.",
+	"completeOrder": "Completar pedido",
+	"completeOrderFailed": "Falló al completar el pedido. Por favor intenta de nuevo.",
+	"completeOrderSuccess": "¡Pedido marcado como completado!"
 }

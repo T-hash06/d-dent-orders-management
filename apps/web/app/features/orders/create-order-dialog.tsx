@@ -59,6 +59,9 @@ export function CreateOrderDialog() {
 	const { data: products = [] } = useQuery(
 		trpc.products.getProducts.queryOptions(),
 	);
+	const { data: assignableUsers = [] } = useQuery(
+		trpc.users.getAssignableUsers.queryOptions(),
+	);
 
 	const createMutation = useMutation(
 		trpc.orders.createOrder.mutationOptions({
@@ -82,6 +85,7 @@ export function CreateOrderDialog() {
 			const parsedValue = createOrderFormSchema.parse(value); // This should never fail since the form values are validated.
 			createMutation.mutate({
 				customerId: parsedValue.customerId,
+				assignedToUserId: parsedValue.assignedToUserId,
 				deliveryAddress: parsedValue.deliveryAddress,
 				expectedDeliveryAt: parsedValue.expectedDeliveryAt,
 				status: parsedValue.status,
@@ -145,6 +149,53 @@ export function CreateOrderDialog() {
 													id={field.name}
 													name={field.name}
 													placeholder={m.orderCustomerPlaceholder()}
+													aria-invalid={isInvalid}
+													onBlur={() => field.handleBlur()}
+												/>
+												<ComboboxContent>
+													<ComboboxEmpty>{m.noResults()}</ComboboxEmpty>
+													<ComboboxList>
+														{(item) => (
+															<ComboboxItem key={item.id} value={item}>
+																{item.name}
+															</ComboboxItem>
+														)}
+													</ComboboxList>
+												</ComboboxContent>
+											</Combobox>
+										</div>
+										<FieldError errors={field.state.meta.errors} />
+									</Field>
+								);
+							}}
+						</form.Field>
+
+						<form.Field name="assignedToUserId">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								const selectedUser =
+									assignableUsers.find((u) => u.id === field.state.value) ||
+									null;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>
+											{m.orderAssignedTo()}
+										</FieldLabel>
+										<div>
+											<Combobox
+												value={selectedUser}
+												onValueChange={(val) =>
+													field.handleChange(val?.id ?? null)
+												}
+												disabled={isLoading}
+												items={assignableUsers}
+												itemToStringLabel={(item) => item.name}
+											>
+												<ComboboxInput
+													id={field.name}
+													name={field.name}
+													placeholder={m.orderAssignedToPlaceholder()}
 													aria-invalid={isInvalid}
 													onBlur={() => field.handleBlur()}
 												/>

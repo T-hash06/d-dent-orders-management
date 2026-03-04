@@ -17,6 +17,7 @@ const orderItemFormState = z.object({
 
 const editOrderFormState = z.object({
 	customerId: z.string(),
+	assignedToUserId: z.string().nullable(),
 	deliveryAddress: z.string(),
 	expectedDeliveryAt: z.date(),
 	status: z.string().nullable(),
@@ -27,6 +28,7 @@ export const editOrderFormSchema = z.object({
 	customerId: z.string().min(1, {
 		error: m.editOrderCustomerRequired(),
 	}),
+	assignedToUserId: z.string().nullable(),
 	deliveryAddress: z.string().min(1, {
 		error: m.editOrderAddressRequired(),
 	}),
@@ -55,6 +57,7 @@ export const editOrderFormSchema = z.object({
 
 export function editOrderFormOptions(defaultValues: {
 	customerId: string;
+	assignedToUserId: string | null;
 	deliveryAddress: string;
 	expectedDeliveryAt: Date;
 	status: string | null;
@@ -63,6 +66,7 @@ export function editOrderFormOptions(defaultValues: {
 	return formOptions({
 		defaultValues: {
 			customerId: defaultValues.customerId,
+			assignedToUserId: defaultValues.assignedToUserId,
 			deliveryAddress: defaultValues.deliveryAddress,
 			expectedDeliveryAt: new Date(defaultValues.expectedDeliveryAt),
 			status: defaultValues.status,

@@ -260,6 +260,8 @@
 	"deleteOrderConfirm": "Delete",
 	"orderCustomer": "Customer",
 	"orderCustomerPlaceholder": "Select a customer...",
+	"orderAssignedTo": "Assigned to",
+	"orderAssignedToPlaceholder": "Select a user...",
 	"orderDeliveryAddress": "Delivery address",
 	"orderDeliveryAddressPlaceholder": "e.g. 123 Main St",
 	"orderExpectedDelivery": "Expected delivery",
@@ -300,5 +302,10 @@
 	"editOrderItemQuantityInvalid": "Quantity must be a positive integer",
 	"editOrderItemPriceInvalid": "Price must be a non-negative number",
 	"noResults": "No results found.",
-	"orderExpectedDeliveryPlaceholder": "Select a date..."
+	"orderExpectedDeliveryPlaceholder": "Select a date...",
+	"orderNotFound": "Order not found.",
+	"orderNotOwnedByUser": "You do not have permission to complete this order.",
+	"completeOrder": "Complete order",
+	"completeOrderFailed": "Failed to complete order. Please try again.",
+	"completeOrderSuccess": "Order marked as completed!"
 }

@@ -13,6 +13,7 @@ import {
 } from '@full-stack-template/ui';
 import {
 	ArrowUpIcon,
+	CheckCircle,
 	Delete02Icon,
 	MoreHorizontalIcon,
 	PencilEdit01Icon,
@@ -20,17 +21,20 @@ import {
 import { HugeiconsIcon } from '@hugeicons/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { Order } from '@/features/.server/orders/order.types';
+import { useSession } from '@/features/auth/auth.context';
 import { m } from '@/features/i18n/paraglide/messages';
 import { getLocale } from '@/features/i18n/paraglide/runtime';
 
 type OrderColumnsProps = {
 	onEdit: (order: Order) => void;
 	onDelete: (order: Order) => void;
+	onComplete: (order: Order) => void;
 };
 
 export function getOrderColumns({
 	onEdit,
 	onDelete,
+	onComplete,
 }: OrderColumnsProps): ColumnDef<Order>[] {
 	return [
 		{
@@ -211,6 +215,13 @@ export function getOrderColumns({
 			enableHiding: false,
 			cell: ({ row }) => {
 				const order = row.original;
+				const { user } = useSession();
+				const userId = user?.id;
+				const canComplete =
+					order.status !== 'completed' &&
+					userId &&
+					order.assignedToUserId === userId;
+
 				return (
 					<div className="flex justify-end">
 						<DropdownMenu>
@@ -221,7 +232,7 @@ export function getOrderColumns({
 							>
 								<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
 							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end" className="w-40">
+							<DropdownMenuContent align="end" className="w-max">
 								<DropdownMenuGroup>
 									<DropdownMenuLabel>{m.orderActions()}</DropdownMenuLabel>
 									<DropdownMenuItem
@@ -234,6 +245,18 @@ export function getOrderColumns({
 										/>
 										{m.editOrder()}
 									</DropdownMenuItem>
+									{canComplete && (
+										<DropdownMenuItem
+											onClick={() => onComplete(order)}
+											className="cursor-pointer"
+										>
+											<HugeiconsIcon
+												icon={CheckCircle}
+												className="mr-2 h-4 w-4"
+											/>
+											{m.completeOrder()}
+										</DropdownMenuItem>
+									)}
 								</DropdownMenuGroup>
 								<DropdownMenuSeparator />
 								<DropdownMenuGroup>

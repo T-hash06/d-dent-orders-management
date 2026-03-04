@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import SuperJSON from 'superjson';
+import * as z from 'zod';
 import { ZodError } from 'zod';
 import { auth } from '@/features/.server/auth/better-auth.lib';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
@@ -54,22 +55,40 @@ const formatZodToTanStack = (
 	);
 }; // TODO: Move this to a shared utils file
 
+const issuesSchema = z.array(
+	z.object({
+		code: z.enum(['custom']),
+		message: z.string(),
+		path: z.array(z.string().or(z.number())),
+	}),
+);
+
+function buildZodErrorFromTRPCError(error: TRPCError): ZodError | null {
+	if (error.cause?.message) {
+		try {
+			const parsed = JSON.parse(error.cause.message);
+			const issues = issuesSchema.parse(parsed);
+			return new ZodError(issues);
+		} catch {
+			return null;
+		}
+	}
+	return null;
+}
+
 export const t = initTRPC.context<TRPCContext>().create({
 	transformer: SuperJSON,
 	errorFormatter: (opts) => {
 		const { shape, error } = opts;
 
-		const isZodError = error.cause instanceof ZodError;
+		const zodError = buildZodErrorFromTRPCError(error);
 
 		return {
 			...shape,
 			data: {
 				...shape.data,
-				message: isZodError ? error.cause.message : null,
-				zodError:
-					error.cause instanceof ZodError
-						? formatZodToTanStack(error.cause)
-						: null,
+				message: zodError ? zodError.message : null,
+				zodError: zodError ? formatZodToTanStack(zodError) : null,
 			},
 		};
 	},

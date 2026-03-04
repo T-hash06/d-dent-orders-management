@@ -3,6 +3,7 @@ import { deleteCustomer } from '@/features/.server/customers/delete-customer.mut
 import { getCustomerById } from '@/features/.server/customers/get-customer-by-id.query';
 import { getCustomers } from '@/features/.server/customers/get-customers.query';
 import { updateCustomer } from '@/features/.server/customers/update-customer.mutation';
+import { completeOrder } from '@/features/.server/orders/complete-order.mutation';
 import { createOrder } from '@/features/.server/orders/create-order.mutation';
 import { deleteOrder } from '@/features/.server/orders/delete-order.mutation';
 import { getOrderById } from '@/features/.server/orders/get-order-by-id.query';
@@ -14,6 +15,7 @@ import { getProductById } from '@/features/.server/products/get-product-by-id.qu
 import { getProducts } from '@/features/.server/products/get-products.query';
 import { updateProduct } from '@/features/.server/products/update-product.mutation';
 import { t } from '@/features/.server/trpc/trpc.init';
+import { getAssignableUsers } from '@/features/.server/users/get-assignable-users.query';
 
 const customers = t.router({
 	getCustomers,
@@ -37,12 +39,19 @@ const orders = t.router({
 	createOrder,
 	updateOrder,
 	deleteOrder,
+
+	completeOrder,
+});
+
+const users = t.router({
+	getAssignableUsers,
 });
 
 export const appRouter = t.router({
 	customers,
 	products,
 	orders,
+	users,
 });
 
 export type AppRouter = typeof appRouter;

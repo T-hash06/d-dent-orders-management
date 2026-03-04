@@ -17,6 +17,7 @@ export const orderItemFormState = z.object({
 
 export const createOrderFormState = z.object({
 	customerId: z.string(),
+	assignedToUserId: z.string().nullable(),
 	deliveryAddress: z.string(),
 	expectedDeliveryAt: z.date(),
 	status: z.string().nullable(),
@@ -27,6 +28,7 @@ export const createOrderFormSchema = z.object({
 	customerId: z.string().min(1, {
 		error: m.createOrderCustomerRequired(),
 	}),
+	assignedToUserId: z.string().nullable(),
 	deliveryAddress: z.string().min(1, {
 		error: m.createOrderAddressRequired(),
 	}),
@@ -55,6 +57,7 @@ export const createOrderFormSchema = z.object({
 
 const DEFAULT_CREATE_ORDER_FORM_VALUES: z.infer<typeof createOrderFormState> = {
 	customerId: '',
+	assignedToUserId: null,
 	deliveryAddress: '',
 	expectedDeliveryAt: new Date(),
 	status: 'pending',
