@@ -1,7 +1,5 @@
 import {
 	Button,
-	Card,
-	CardContent,
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
@@ -31,11 +29,16 @@ import {
 	getFilteredRowModel,
 	getPaginationRowModel,
 	getSortedRowModel,
+	type OnChangeFn,
 	type SortingState,
 	useReactTable,
 	type VisibilityState,
 } from '@tanstack/react-table';
-import { useState } from 'react';
+import { useMemo } from 'react';
+import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
+import { PageHeader } from '@/components/layout/page-header';
+import { StatBar } from '@/components/ui/stat-bar';
 import type { Product } from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import { CreateProductDialog } from '@/features/products/create-product-dialog';
@@ -44,9 +47,82 @@ import { EditProductDialog } from '@/features/products/edit-product-dialog';
 import { getProductColumns } from '@/features/products/products.columns';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
-export default function ProductsRoute() {
+interface ProductStoreState {
+	sorting: SortingState;
+	columnFilters: ColumnFiltersState;
+	columnVisibility: VisibilityState;
+	rowSelection: Record<string, boolean>;
+	editProduct: Product | null;
+	deleteProduct: Product | null;
+}
+
+interface ProductStoreActions {
+	setSorting: OnChangeFn<SortingState>;
+	setColumnFilters: OnChangeFn<ColumnFiltersState>;
+	setColumnVisibility: OnChangeFn<VisibilityState>;
+	setRowSelection: OnChangeFn<Record<string, boolean>>;
+	setEditProduct: (product: Product | null) => void;
+	setDeleteProduct: (product: Product | null) => void;
+}
+
+const useProductStore = create<ProductStoreState & ProductStoreActions>(
+	(set) => ({
+		sorting: [],
+		columnFilters: [],
+		columnVisibility: {},
+		rowSelection: {},
+		editProduct: null,
+		deleteProduct: null,
+		setSorting: (updater) => {
+			set((state) => {
+				const newSorting =
+					typeof updater === 'function' ? updater(state.sorting) : updater;
+				return { sorting: newSorting };
+			});
+		},
+		setColumnFilters: (updater) => {
+			set((state) => {
+				const newColumnFilters =
+					typeof updater === 'function'
+						? updater(state.columnFilters)
+						: updater;
+				return { columnFilters: newColumnFilters };
+			});
+		},
+		setColumnVisibility: (updater) => {
+			set((state) => {
+				const newColumnVisibility =
+					typeof updater === 'function'
+						? updater(state.columnVisibility)
+						: updater;
+				return { columnVisibility: newColumnVisibility };
+			});
+		},
+		setRowSelection: (updater) => {
+			set((state) => {
+				const newRowSelection =
+					typeof updater === 'function' ? updater(state.rowSelection) : updater;
+				return { rowSelection: newRowSelection };
+			});
+		},
+		setEditProduct: (editProduct) => set({ editProduct }),
+		setDeleteProduct: (deleteProduct) => set({ deleteProduct }),
+	}),
+);
+
+const emptyProductsFallback: Product[] = [];
+
+const ProductsRouteHeader = () => (
+	<PageHeader
+		title={m.productsTitle()}
+		description={m.productsDescription()}
+		action={<CreateProductDialog />}
+	/>
+);
+
+const ProductsRouteStats = () => {
 	const trpc = useTRPC();
-	const { data: products = [], isLoading } = useQuery(
+	const { data: products = emptyProductsFallback } = useQuery(
 		trpc.products.getProducts.queryOptions(),
 	);
 
@@ -65,30 +141,70 @@ export default function ProductsRoute() {
 		minimumFractionDigits: 0,
 	}).format(averagePrice);
 
-	const [sorting, setSorting] = useState<SortingState>([]);
-	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-	const [rowSelection, setRowSelection] = useState({});
+	return (
+		<StatBar
+			stats={[
+				{ label: m.productsTotalStat(), value: productsCount },
+				{ label: m.productsAvgPriceStat(), value: formattedAveragePrice },
+				{ label: m.productsWithPriceStat(), value: productsWithPrice },
+			]}
+		/>
+	);
+};
 
-	const [editProduct, setEditProduct] = useState<Product | null>(null);
-	const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
+const ProductsRouteTable = () => {
+	const trpc = useTRPC();
+	const { data: products = emptyProductsFallback, isLoading } = useQuery(
+		trpc.products.getProducts.queryOptions(),
+	);
 
-	const columns = getProductColumns({
-		onEdit: (product) => setEditProduct(product),
-		onDelete: (product) => setDeleteProduct(product),
-	});
+	const [
+		sorting,
+		columnFilters,
+		columnVisibility,
+		rowSelection,
+		setSorting,
+		setColumnFilters,
+		setColumnVisibility,
+		setRowSelection,
+		setEditProduct,
+		setDeleteProduct,
+	] = useProductStore(
+		useShallow((store) => [
+			store.sorting,
+			store.columnFilters,
+			store.columnVisibility,
+			store.rowSelection,
+			store.setSorting,
+			store.setColumnFilters,
+			store.setColumnVisibility,
+			store.setRowSelection,
+			store.setEditProduct,
+			store.setDeleteProduct,
+		]),
+	);
+
+	const columns = useMemo(
+		() =>
+			getProductColumns({
+				onEdit: (product) => setEditProduct(product),
+				onDelete: (product) => setDeleteProduct(product),
+			}),
+		[setEditProduct, setDeleteProduct],
+	);
 
 	const table = useReactTable({
 		data: products,
 		columns,
+		getRowId: (row) => row.id,
 		onSortingChange: setSorting,
 		onColumnFiltersChange: setColumnFilters,
+		onColumnVisibilityChange: setColumnVisibility,
+		onRowSelectionChange: setRowSelection,
 		getCoreRowModel: getCoreRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
-		onColumnVisibilityChange: setColumnVisibility,
-		onRowSelectionChange: setRowSelection,
 		state: {
 			sorting,
 			columnFilters,
@@ -98,197 +214,170 @@ export default function ProductsRoute() {
 	});
 
 	return (
-		<div className="bg-background">
-			<div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 md:py-8 space-y-6">
-				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-					<div className="space-y-0.5">
-						<h1 className="text-2xl font-bold tracking-tight">
-							{m.productsTitle()}
-						</h1>
-						<p className="text-sm text-muted-foreground">
-							{m.productsDescription()}
-						</p>
-					</div>
-					<CreateProductDialog />
-				</div>
-
-				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					<Card>
-						<CardContent className="p-4 space-y-1">
-							<p className="text-xs text-muted-foreground">
-								{m.productsTotalStat()}
-							</p>
-							<p className="text-2xl font-semibold">{productsCount}</p>
-						</CardContent>
-					</Card>
-					<Card>
-						<CardContent className="p-4 space-y-1">
-							<p className="text-xs text-muted-foreground">
-								{m.productsAvgPriceStat()}
-							</p>
-							<p className="text-2xl font-semibold tabular-nums">
-								{formattedAveragePrice}
-							</p>
-						</CardContent>
-					</Card>
-					<Card>
-						<CardContent className="p-4 space-y-1">
-							<p className="text-xs text-muted-foreground">
-								{m.productsWithPriceStat()}
-							</p>
-							<p className="text-2xl font-semibold">{productsWithPrice}</p>
-						</CardContent>
-					</Card>
-				</div>
-
-				<div className="rounded-lg border border-border bg-card p-3 flex flex-col gap-3 sm:flex-row sm:items-center">
-					<Input
-						placeholder={m.productsSearchPlaceholder()}
-						value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
-						onChange={(event) =>
-							table.getColumn('name')?.setFilterValue(event.target.value)
+		<>
+			<div className="rounded-lg border border-border bg-card p-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+				<Input
+					placeholder={m.productsSearchPlaceholder()}
+					value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
+					onChange={(event) =>
+						table.getColumn('name')?.setFilterValue(event.target.value)
+					}
+					className="w-full sm:max-w-xs h-8 text-sm"
+				/>
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button
+								variant="outline"
+								size="sm"
+								className="h-8 gap-2 sm:ml-auto"
+							/>
 						}
-						className="w-full sm:max-w-xs h-8 text-sm"
-					/>
-					<DropdownMenu>
-						<DropdownMenuTrigger
-							render={
-								<Button
-									variant="outline"
-									size="sm"
-									className="h-8 gap-2 sm:ml-auto"
-								/>
-							}
-						>
-							<HugeiconsIcon icon={FilterHorizontalIcon} className="h-4 w-4" />
-							{m.productsColumns()}
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuGroup>
-								{table
-									.getAllColumns()
-									.filter((col) => col.getCanHide())
-									.map((col) => (
-										<DropdownMenuCheckboxItem
-											key={col.id}
-											className="capitalize"
-											checked={col.getIsVisible()}
-											onCheckedChange={(value) => col.toggleVisibility(!!value)}
-										>
-											{col.columnDef.meta?.name ?? col.id}
-										</DropdownMenuCheckboxItem>
-									))}
-							</DropdownMenuGroup>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
+					>
+						<HugeiconsIcon icon={FilterHorizontalIcon} className="h-4 w-4" />
+						{m.productsColumns()}
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end">
+						<DropdownMenuGroup>
+							{table
+								.getAllColumns()
+								.filter((col) => col.getCanHide())
+								.map((col) => (
+									<DropdownMenuCheckboxItem
+										key={col.id}
+										className="capitalize"
+										checked={col.getIsVisible()}
+										onCheckedChange={(value) => col.toggleVisibility(!!value)}
+									>
+										{col.columnDef.meta?.name ?? col.id}
+									</DropdownMenuCheckboxItem>
+								))}
+						</DropdownMenuGroup>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</div>
 
-				<div className="overflow-hidden rounded-lg border border-border">
-					<Table>
-						<TableHeader>
-							{table.getHeaderGroups().map((headerGroup) => (
-								<TableRow key={headerGroup.id}>
-									{headerGroup.headers.map((header) => (
-										<TableHead key={header.id}>
-											{header.isPlaceholder
-												? null
-												: flexRender(
-														header.column.columnDef.header,
-														header.getContext(),
-													)}
-										</TableHead>
-									))}
-								</TableRow>
-							))}
-						</TableHeader>
-						<TableBody>
-							{isLoading ? (
-								<TableRow>
-									{columns.map((col, colIdx) => (
-										<TableCell key={`${col.id ?? colIdx}`}>
-											<Skeleton className="h-5 w-full rounded" />
+			<div className="overflow-x-auto rounded-lg border border-border">
+				<Table>
+					<TableHeader>
+						{table.getHeaderGroups().map((headerGroup) => (
+							<TableRow key={headerGroup.id}>
+								{headerGroup.headers.map((header) => (
+									<TableHead key={header.id}>
+										{header.isPlaceholder
+											? null
+											: flexRender(
+													header.column.columnDef.header,
+													header.getContext(),
+												)}
+									</TableHead>
+								))}
+							</TableRow>
+						))}
+					</TableHeader>
+					<TableBody>
+						{isLoading ? (
+							<TableRow>
+								{columns.map((col, colIdx) => (
+									<TableCell key={`${col.id ?? colIdx}`}>
+										<Skeleton className="h-5 w-full rounded" />
+									</TableCell>
+								))}
+							</TableRow>
+						) : table.getRowModel().rows.length > 0 ? (
+							table.getRowModel().rows.map((row) => (
+								<TableRow
+									key={row.id}
+									data-state={row.getIsSelected() && 'selected'}
+								>
+									{row.getVisibleCells().map((cell) => (
+										<TableCell key={cell.id}>
+											{flexRender(
+												cell.column.columnDef.cell,
+												cell.getContext(),
+											)}
 										</TableCell>
 									))}
 								</TableRow>
-							) : table.getRowModel().rows.length > 0 ? (
-								table.getRowModel().rows.map((row) => (
-									<TableRow
-										key={row.id}
-										data-state={row.getIsSelected() && 'selected'}
-									>
-										{row.getVisibleCells().map((cell) => (
-											<TableCell key={cell.id}>
-												{flexRender(
-													cell.column.columnDef.cell,
-													cell.getContext(),
-												)}
-											</TableCell>
-										))}
-									</TableRow>
-								))
-							) : (
-								<TableRow>
-									<TableCell
-										colSpan={columns.length}
-										className="h-32 text-center"
-									>
-										<Empty className="py-6">
-											<p className="text-sm font-medium text-foreground">
-												{m.noProductsTitle()}
-											</p>
-											<p className="text-xs text-muted-foreground mt-1">
-												{m.noProductsDescription()}
-											</p>
-										</Empty>
-									</TableCell>
-								</TableRow>
-							)}
-						</TableBody>
-					</Table>
-				</div>
-
-				<div className="flex items-center justify-between gap-4">
-					<p className="text-sm text-muted-foreground flex-1">
-						{table.getFilteredSelectedRowModel().rows.length > 0
-							? m.productRowsSelected({
-									selected: String(
-										table.getFilteredSelectedRowModel().rows.length,
-									),
-									total: String(table.getFilteredRowModel().rows.length),
-								})
-							: null}
-					</p>
-					<div className="flex items-center gap-2">
-						<Button
-							variant="outline"
-							size="sm"
-							className="h-8"
-							onClick={() => table.previousPage()}
-							disabled={!table.getCanPreviousPage()}
-						>
-							<HugeiconsIcon
-								icon={ArrowLeft01Icon}
-								className="h-3.5 w-3.5 mr-1"
-							/>
-							{m.productPrevious()}
-						</Button>
-						<Button
-							variant="outline"
-							size="sm"
-							className="h-8"
-							onClick={() => table.nextPage()}
-							disabled={!table.getCanNextPage()}
-						>
-							{m.productNext()}
-							<HugeiconsIcon
-								icon={ArrowRight01Icon}
-								className="h-3.5 w-3.5 ml-1"
-							/>
-						</Button>
-					</div>
-				</div>
+							))
+						) : (
+							<TableRow>
+								<TableCell
+									colSpan={columns.length}
+									className="h-32 text-center"
+								>
+									<Empty className="py-6">
+										<p className="text-sm font-medium text-foreground">
+											{m.noProductsTitle()}
+										</p>
+										<p className="text-xs text-muted-foreground mt-1">
+											{m.noProductsDescription()}
+										</p>
+									</Empty>
+								</TableCell>
+							</TableRow>
+						)}
+					</TableBody>
+				</Table>
 			</div>
 
+			<div className="flex items-center justify-between gap-4">
+				<p className="hidden sm:block text-sm text-muted-foreground flex-1">
+					{table.getFilteredSelectedRowModel().rows.length > 0
+						? m.productRowsSelected({
+								selected: String(
+									table.getFilteredSelectedRowModel().rows.length,
+								),
+								total: String(table.getFilteredRowModel().rows.length),
+							})
+						: null}
+				</p>
+				<div className="flex items-center gap-2">
+					<Button
+						variant="outline"
+						size="sm"
+						className="h-8"
+						onClick={() => table.previousPage()}
+						disabled={!table.getCanPreviousPage()}
+					>
+						<HugeiconsIcon
+							icon={ArrowLeft01Icon}
+							className="h-3.5 w-3.5 mr-1"
+						/>
+						{m.productPrevious()}
+					</Button>
+					<Button
+						variant="outline"
+						size="sm"
+						className="h-8"
+						onClick={() => table.nextPage()}
+						disabled={!table.getCanNextPage()}
+					>
+						{m.productNext()}
+						<HugeiconsIcon
+							icon={ArrowRight01Icon}
+							className="h-3.5 w-3.5 ml-1"
+						/>
+					</Button>
+				</div>
+			</div>
+		</>
+	);
+};
+
+const ProductDialogs = () => {
+	const [editProduct, deleteProduct, setEditProduct, setDeleteProduct] =
+		useProductStore(
+			useShallow((store) => [
+				store.editProduct,
+				store.deleteProduct,
+				store.setEditProduct,
+				store.setDeleteProduct,
+			]),
+		);
+
+	return (
+		<>
 			<EditProductDialog
 				product={editProduct}
 				open={editProduct !== null}
@@ -303,6 +392,22 @@ export default function ProductsRoute() {
 					if (!open) setDeleteProduct(null);
 				}}
 			/>
+		</>
+	);
+};
+
+export default function ProductsRoute() {
+	return (
+		<div className="bg-background">
+			<div className="mx-auto max-w-6xl px-4 sm:px-6 py-5 md:py-7 space-y-5">
+				<ProductsRouteHeader />
+
+				<ProductsRouteStats />
+
+				<ProductsRouteTable />
+			</div>
+
+			<ProductDialogs />
 		</div>
 	);
 }

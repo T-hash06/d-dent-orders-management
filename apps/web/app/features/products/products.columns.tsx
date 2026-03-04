@@ -128,7 +128,7 @@ export function getProductColumns({
 							>
 								<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
 							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end" className="w-40">
+							<DropdownMenuContent align="end" className="w-max">
 								<DropdownMenuGroup>
 									<DropdownMenuLabel>{m.productActions()}</DropdownMenuLabel>
 									<DropdownMenuItem
@@ -146,11 +146,12 @@ export function getProductColumns({
 								<DropdownMenuGroup>
 									<DropdownMenuItem
 										onClick={() => onDelete(product)}
-										className="cursor-pointer text-destructive focus:text-background focus:bg-destructive"
+										className="cursor-pointer text-destructive"
+										variant="destructive"
 									>
 										<HugeiconsIcon
 											icon={Delete02Icon}
-											className="mr-2 h-4 w-4"
+											className="mr-2 h-4 w-4 text-destructive"
 										/>
 										{m.deleteProduct()}
 									</DropdownMenuItem>

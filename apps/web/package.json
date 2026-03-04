@@ -38,7 +38,8 @@
 		"react-dom": "^19.2.4",
 		"react-router": "7.13.0",
 		"superjson": "^2.2.6",
-		"zod": "^4.3.6"
+		"zod": "^4.3.6",
+		"zustand": "^5.0.11"
 	},
 	"devDependencies": {
 		"@babel/preset-typescript": "^7.28.5",

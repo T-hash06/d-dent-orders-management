@@ -87,7 +87,7 @@ export function DeleteProductDialog({
 					<AlertDialogAction
 						onClick={handleConfirm}
 						disabled={deleteMutation.isPending}
-						className="bg-destructive text-white hover:bg-destructive/90"
+						variant="destructive"
 					>
 						{m.deleteProductConfirm()}
 					</AlertDialogAction>

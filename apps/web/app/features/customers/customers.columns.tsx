@@ -119,7 +119,7 @@ export function getCustomerColumns({
 							>
 								<HugeiconsIcon icon={MoreHorizontalIcon} className="h-4 w-4" />
 							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end" className="w-40">
+							<DropdownMenuContent align="end" className="w-max">
 								<DropdownMenuGroup>
 									<DropdownMenuLabel>{m.customerActions()}</DropdownMenuLabel>
 									<DropdownMenuItem
