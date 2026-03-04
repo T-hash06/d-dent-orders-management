@@ -262,7 +262,8 @@ export function getOrderColumns({
 								<DropdownMenuGroup>
 									<DropdownMenuItem
 										onClick={() => onDelete(order)}
-										className="cursor-pointer text-destructive focus:text-background focus:bg-destructive"
+										className="cursor-pointer"
+										variant="destructive"
 									>
 										<HugeiconsIcon
 											icon={Delete02Icon}
