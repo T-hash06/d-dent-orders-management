@@ -1,242 +1,205 @@
 import {
-	Avatar,
-	AvatarFallback,
-	AvatarImage,
+	Badge,
 	Button,
 	Card,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuRadioGroup,
-	DropdownMenuRadioItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
+	Empty,
+	Skeleton,
 } from '@full-stack-template/ui';
-import {
-	Computer,
-	Logout01Icon,
-	Moon,
-	Package,
-	PackageDeliveredIcon,
-	Profile,
-	Sun,
-} from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { useTheme } from 'next-themes';
-import { useCallback } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { useSession } from '@/features/auth/auth.context';
-import { signOut } from '@/features/auth/auth.lib';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router';
 import { m } from '@/features/i18n/paraglide/messages';
-import { localizeHref } from '@/features/i18n/paraglide/runtime';
+import { getLocale, localizeHref } from '@/features/i18n/paraglide/runtime';
+import { useTRPC } from '@/features/trpc/trpc.context';
 import type { Route } from './+types/home.route';
 
 export const meta = ({ location: _location }: Route.MetaArgs) => [
-	{ title: 'Home' },
-	{ name: 'description', content: 'Welcome to the home page!' },
+	{ title: 'Dashboard' },
+	{ name: 'description', content: 'Overview of your workspace activity.' },
 ];
 
-function getGreeting() {
-	const hour = new Date().getHours();
-	if (hour < 12) return m.greetingMorning();
-	if (hour < 18) return m.greetingAfternoon();
-	return m.greetingEvening();
-}
-
-function getUserInitials(name?: string | null) {
-	if (!name) return '?';
-	return name
-		.split(' ')
-		.slice(0, 2)
-		.map((n) => n[0])
-		.join('')
-		.toUpperCase();
-}
-
 export default function HomeRoute() {
-	const { theme, setTheme } = useTheme();
-	const navigate = useNavigate();
-	const session = useSession();
+	const trpc = useTRPC();
+	const { data, isLoading } = useQuery(
+		trpc.orders.getHomeOverview.queryOptions(),
+	);
 
-	const handleSignOut = useCallback(async () => {
-		await signOut();
-		navigate(localizeHref('/auth/login'));
-	}, [navigate]);
+	const currency = new Intl.NumberFormat(getLocale(), {
+		style: 'currency',
+		currency: 'COP',
+		minimumFractionDigits: 0,
+	});
 
-	const userName = session.user.name;
-	const userEmail = session.user.email;
-	const userImage = session.user.image;
+	const statsSkeletonKeys = ['total', 'pending', 'inProgress', 'assigned'];
+	const pendingSkeletonKeys = ['first', 'second', 'third'];
 
 	return (
-		<div className="min-h-dvh w-dvw max-w-full bg-background overflow-x-hidden">
-			<header className="z-10 sticky top-0 border-b border-border bg-background/80 backdrop-blur-md">
-				<div className="mx-auto max-w-3xl px-6 h-14 flex items-center justify-between">
-					<div className="flex items-center gap-2.5">
-						<div className="w-7 h-7 rounded-xl bg-primary shadow-sm flex items-center justify-center shrink-0">
-							<span className="text-primary-foreground font-bold text-sm leading-none">
-								D
-							</span>
-						</div>
-						<span className="text-sm font-semibold tracking-tight">d-dent</span>
-					</div>
-
-					<div className="flex items-center gap-2">
-						<DropdownMenu>
-							<DropdownMenuTrigger
-								render={
-									<Button variant="ghost" size="icon" className="size-8" />
-								}
-							>
-								<HugeiconsIcon
-									icon={
-										theme === 'system'
-											? Computer
-											: theme === 'light'
-												? Sun
-												: Moon
-									}
-									className="h-4 w-4"
-								/>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuGroup>
-									<DropdownMenuLabel>{m.selectTheme()}</DropdownMenuLabel>
-									<DropdownMenuRadioGroup
-										value={theme}
-										onValueChange={setTheme}
-									>
-										<DropdownMenuRadioItem value="system">
-											<HugeiconsIcon
-												icon={Computer}
-												className="mr-2 h-4 w-4 opacity-70"
-											/>
-											{m.themeSystem()}
-										</DropdownMenuRadioItem>
-										<DropdownMenuRadioItem value="light">
-											<HugeiconsIcon
-												icon={Sun}
-												className="mr-2 h-4 w-4 opacity-70"
-											/>
-											{m.themeLight()}
-										</DropdownMenuRadioItem>
-										<DropdownMenuRadioItem value="dark">
-											<HugeiconsIcon
-												icon={Moon}
-												className="mr-2 h-4 w-4 opacity-70"
-											/>
-											{m.themeDark()}
-										</DropdownMenuRadioItem>
-									</DropdownMenuRadioGroup>
-								</DropdownMenuGroup>
-							</DropdownMenuContent>
-						</DropdownMenu>
-
-						<DropdownMenu>
-							<DropdownMenuTrigger
-								render={
-									<button
-										type="button"
-										className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-										aria-label="User menu"
-									/>
-								}
-							>
-								<Avatar className="size-8 ring-2 ring-border hover:ring-primary/40 transition-all duration-200">
-									{userImage ? (
-										<AvatarImage src={userImage} alt={userName ?? ''} />
-									) : null}
-									<AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-										{getUserInitials(userName)}
-									</AvatarFallback>
-								</Avatar>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end" className="w-52">
-								<div className="px-3 py-2.5">
-									<p className="text-sm font-medium leading-none truncate">
-										{userName ?? '—'}
-									</p>
-									<p className="text-xs text-muted-foreground mt-1 truncate">
-										{userEmail ?? '—'}
-									</p>
-								</div>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem
-									className="text-destructive hover:text-background focus:text-background cursor-pointer"
-									onClick={handleSignOut}
-								>
-									<HugeiconsIcon icon={Logout01Icon} className="mr-2 h-4 w-4" />
-									{m.signOut()}
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
-				</div>
-			</header>
-
-			<main className="relative z-10 mx-auto max-w-3xl px-6 py-10 space-y-8">
+		<div className="bg-background">
+			<div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 md:py-8 space-y-6">
 				<div className="space-y-1">
-					<h1 className="text-3xl font-bold tracking-tight">
-						{getGreeting()},{' '}
-						<span className="text-primary">
-							{userName?.split(' ')[0] ?? m.greetingFallback()}
-						</span>
-						.
+					<h1 className="text-2xl font-bold tracking-tight">
+						{m.homePageTitle()}
 					</h1>
-					<p className="text-muted-foreground text-sm">
-						Panel inicial del sistema de gestión de pedidos.
+					<p className="text-sm text-muted-foreground">
+						{m.homePageDescription()}
 					</p>
 				</div>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Order Management</CardTitle>
-						<CardDescription>
-							Se eliminó el módulo de tareas y ahora la aplicación usará órdenes
-							como entidad principal.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="grid grid-cols-3 gap-3">
-							<Link
-								to="/products"
-								className="flex flex-col items-center gap-2 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors text-center"
+				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+					{isLoading ? (
+						statsSkeletonKeys.map((key) => (
+							<Card key={key}>
+								<CardHeader className="space-y-2 pb-2">
+									<Skeleton className="h-4 w-24" />
+									<Skeleton className="h-8 w-16" />
+								</CardHeader>
+							</Card>
+						))
+					) : (
+						<>
+							<Card>
+								<CardHeader className="pb-2">
+									<CardDescription>{m.homeTotalOrders()}</CardDescription>
+									<CardTitle className="text-2xl">
+										{data?.stats.totalOrders ?? 0}
+									</CardTitle>
+								</CardHeader>
+							</Card>
+							<Card>
+								<CardHeader className="pb-2">
+									<CardDescription>{m.homePendingOrders()}</CardDescription>
+									<CardTitle className="text-2xl">
+										{data?.stats.pendingOrders ?? 0}
+									</CardTitle>
+								</CardHeader>
+							</Card>
+							<Card>
+								<CardHeader className="pb-2">
+									<CardDescription>{m.homeInProgressOrders()}</CardDescription>
+									<CardTitle className="text-2xl">
+										{data?.stats.inProgressOrders ?? 0}
+									</CardTitle>
+								</CardHeader>
+							</Card>
+							<Card>
+								<CardHeader className="pb-2">
+									<CardDescription>{m.homeMyPendingOrders()}</CardDescription>
+									<CardTitle className="text-2xl">
+										{data?.stats.myPendingOrders ?? 0}
+									</CardTitle>
+								</CardHeader>
+							</Card>
+						</>
+					)}
+				</div>
+
+				<div className="grid gap-4 lg:grid-cols-3">
+					<Card className="lg:col-span-2">
+						<CardHeader>
+							<CardTitle>{m.homeAssignedPendingTitle()}</CardTitle>
+							<CardDescription>
+								{m.homeAssignedPendingDescription()}
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{isLoading ? (
+								<div className="space-y-3">
+									{pendingSkeletonKeys.map((key) => (
+										<Skeleton key={key} className="h-14 w-full" />
+									))}
+								</div>
+							) : data?.assignedPending.length ? (
+								<div className="space-y-2">
+									{data.assignedPending.map((order) => {
+										const date = new Intl.DateTimeFormat(getLocale(), {
+											year: 'numeric',
+											month: 'short',
+											day: 'numeric',
+										}).format(new Date(order.expectedDeliveryAt));
+
+										return (
+											<div
+												key={order.id}
+												className="rounded-lg border border-border p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+											>
+												<div className="min-w-0 space-y-1">
+													<p className="font-medium text-sm truncate">
+														{order.customerName}
+													</p>
+													<p className="text-xs text-muted-foreground truncate">
+														{order.deliveryAddress}
+													</p>
+												</div>
+												<div className="flex items-center gap-2 text-xs sm:text-sm">
+													<Badge
+														variant={order.isLate ? 'destructive' : 'secondary'}
+													>
+														{order.isLate ? m.orderLate() : date}
+													</Badge>
+													<Badge variant="outline">
+														{m.orderItemsCount({
+															count: String(order.itemCount),
+														})}
+													</Badge>
+													<span className="font-medium tabular-nums">
+														{currency.format(order.total)}
+													</span>
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							) : (
+								<Empty className="py-10">
+									<p className="text-sm font-medium">
+										{m.homeNoAssignedOrdersTitle()}
+									</p>
+									<p className="text-xs text-muted-foreground mt-1">
+										{m.homeNoAssignedOrdersDescription()}
+									</p>
+								</Empty>
+							)}
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader>
+							<CardTitle>{m.homeQuickActionsTitle()}</CardTitle>
+							<CardDescription>
+								{m.homeQuickActionsDescription()}
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-2">
+							<Button
+								render={<Link to={localizeHref('/orders')} />}
+								className="w-full justify-start"
+								nativeButton={false}
 							>
-								<HugeiconsIcon
-									icon={Package}
-									className="h-6 w-6 text-primary"
-								/>
-								<span className="text-sm font-medium">Products</span>
-							</Link>
-							<Link
-								to="/customers"
-								className="flex flex-col items-center gap-2 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors text-center"
+								{m.navOrders()}
+							</Button>
+							<Button
+								render={<Link to={localizeHref('/products')} />}
+								variant="outline"
+								className="w-full justify-start"
+								nativeButton={false}
 							>
-								<HugeiconsIcon
-									icon={Profile}
-									className="h-6 w-6 text-primary"
-								/>
-								<span className="text-sm font-medium">Customers</span>
-							</Link>
-							<Link
-								to="/orders"
-								className="flex flex-col items-center gap-2 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors text-center"
+								{m.navProducts()}
+							</Button>
+							<Button
+								render={<Link to={localizeHref('/customers')} />}
+								variant="outline"
+								className="w-full justify-start"
+								nativeButton={false}
 							>
-								<HugeiconsIcon
-									icon={PackageDeliveredIcon}
-									className="h-6 w-6 text-primary"
-								/>
-								<span className="text-sm font-medium">Orders</span>
-							</Link>
-						</div>
-					</CardContent>
-				</Card>
-			</main>
+								{m.navCustomers()}
+							</Button>
+						</CardContent>
+					</Card>
+				</div>
+			</div>
 		</div>
 	);
 }

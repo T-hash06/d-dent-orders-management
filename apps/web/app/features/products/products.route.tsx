@@ -1,5 +1,7 @@
 import {
 	Button,
+	Card,
+	CardContent,
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
@@ -48,6 +50,21 @@ export default function ProductsRoute() {
 		trpc.products.getProducts.queryOptions(),
 	);
 
+	const productsCount = products.length;
+	const productsWithPrice = products.filter(
+		(product) => Number(product.price) > 0,
+	).length;
+	const averagePrice =
+		productsCount > 0
+			? products.reduce((sum, product) => sum + Number(product.price), 0) /
+				productsCount
+			: 0;
+	const formattedAveragePrice = new Intl.NumberFormat('es-CO', {
+		style: 'currency',
+		currency: 'COP',
+		minimumFractionDigits: 0,
+	}).format(averagePrice);
+
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -81,9 +98,9 @@ export default function ProductsRoute() {
 	});
 
 	return (
-		<div className="min-h-dvh bg-background">
-			<div className="mx-auto max-w-6xl px-6 py-8 space-y-6">
-				<div className="flex items-center justify-between">
+		<div className="bg-background">
+			<div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 md:py-8 space-y-6">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="space-y-0.5">
 						<h1 className="text-2xl font-bold tracking-tight">
 							{m.productsTitle()}
@@ -95,14 +112,43 @@ export default function ProductsRoute() {
 					<CreateProductDialog />
 				</div>
 
-				<div className="flex items-center gap-3">
+				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+					<Card>
+						<CardContent className="p-4 space-y-1">
+							<p className="text-xs text-muted-foreground">
+								{m.productsTotalStat()}
+							</p>
+							<p className="text-2xl font-semibold">{productsCount}</p>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardContent className="p-4 space-y-1">
+							<p className="text-xs text-muted-foreground">
+								{m.productsAvgPriceStat()}
+							</p>
+							<p className="text-2xl font-semibold tabular-nums">
+								{formattedAveragePrice}
+							</p>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardContent className="p-4 space-y-1">
+							<p className="text-xs text-muted-foreground">
+								{m.productsWithPriceStat()}
+							</p>
+							<p className="text-2xl font-semibold">{productsWithPrice}</p>
+						</CardContent>
+					</Card>
+				</div>
+
+				<div className="rounded-lg border border-border bg-card p-3 flex flex-col gap-3 sm:flex-row sm:items-center">
 					<Input
 						placeholder={m.productsSearchPlaceholder()}
 						value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
 						onChange={(event) =>
 							table.getColumn('name')?.setFilterValue(event.target.value)
 						}
-						className="max-w-xs h-8 text-sm"
+						className="w-full sm:max-w-xs h-8 text-sm"
 					/>
 					<DropdownMenu>
 						<DropdownMenuTrigger
@@ -110,7 +156,7 @@ export default function ProductsRoute() {
 								<Button
 									variant="outline"
 									size="sm"
-									className="ml-auto h-8 gap-2"
+									className="h-8 gap-2 sm:ml-auto"
 								/>
 							}
 						>
@@ -129,7 +175,7 @@ export default function ProductsRoute() {
 											checked={col.getIsVisible()}
 											onCheckedChange={(value) => col.toggleVisibility(!!value)}
 										>
-											{col.id}
+											{col.columnDef.meta?.name ?? col.id}
 										</DropdownMenuCheckboxItem>
 									))}
 							</DropdownMenuGroup>

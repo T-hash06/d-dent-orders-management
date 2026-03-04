@@ -6,6 +6,8 @@ import { updateCustomer } from '@/features/.server/customers/update-customer.mut
 import { completeOrder } from '@/features/.server/orders/complete-order.mutation';
 import { createOrder } from '@/features/.server/orders/create-order.mutation';
 import { deleteOrder } from '@/features/.server/orders/delete-order.mutation';
+import { getAssignedOrders } from '@/features/.server/orders/get-assigned-orders.query';
+import { getHomeOverview } from '@/features/.server/orders/get-home-overview.query';
 import { getOrderById } from '@/features/.server/orders/get-order-by-id.query';
 import { getOrders } from '@/features/.server/orders/get-orders.query';
 import { updateOrder } from '@/features/.server/orders/update-order.mutation';
@@ -35,6 +37,8 @@ const products = t.router({
 
 const orders = t.router({
 	getOrders,
+	getAssignedOrders,
+	getHomeOverview,
 	getOrderById,
 	createOrder,
 	updateOrder,

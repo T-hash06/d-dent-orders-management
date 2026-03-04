@@ -87,20 +87,6 @@ function SidebarProvider({
 		},
 		[setOpenProp, open],
 	);
-	// On mount, read sidebar state from localStorage if available
-	React.useEffect(() => {
-		try {
-			const stored = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
-			if (stored !== null) {
-				const parsed = JSON.parse(stored);
-				if (typeof parsed === 'boolean') {
-					_setOpen(parsed);
-				}
-			}
-		} catch {
-			// Ignore localStorage errors
-		}
-	}, []);
 
 	// Helper to toggle the sidebar.
 	const toggleSidebar = React.useCallback(() => {
@@ -152,7 +138,7 @@ function SidebarProvider({
 					} as React.CSSProperties
 				}
 				className={cn(
-					'group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full',
+					'group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar',
 					className,
 				)}
 				{...props}
@@ -183,7 +169,7 @@ function Sidebar({
 			<div
 				data-slot="sidebar"
 				className={cn(
-					'bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col',
+					'flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground',
 					className,
 				)}
 				{...props}
@@ -201,7 +187,7 @@ function Sidebar({
 					data-sidebar="sidebar"
 					data-slot="sidebar"
 					data-mobile="true"
-					className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+					className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
 					style={
 						{
 							'--sidebar-width': SIDEBAR_WIDTH_MOBILE,
@@ -221,7 +207,7 @@ function Sidebar({
 
 	return (
 		<div
-			className="group peer text-sidebar-foreground hidden md:block"
+			className="group peer hidden text-sidebar-foreground md:block"
 			data-state={state}
 			data-collapsible={state === 'collapsed' ? collapsible : ''}
 			data-variant={variant}
@@ -306,7 +292,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<'button'>) {
 				'hover:after:bg-sidebar-border absolute inset-y-0 z-20 hidden w-4 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-0.5 sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2',
 				'in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize',
 				'[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize',
-				'hover:group-data-[collapsible=offcanvas]:bg-sidebar group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full',
+				'group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar',
 				'[[data-side=left][data-collapsible=offcanvas]_&]:-right-2',
 				'[[data-side=right][data-collapsible=offcanvas]_&]:-left-2',
 				className,
@@ -438,7 +424,7 @@ function SidebarGroupAction({
 		props: mergeProps<'button'>(
 			{
 				className: cn(
-					'text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground absolute top-3.5 right-3 w-5 rounded-md p-0 focus-visible:ring-2 [&>svg]:size-4 flex aspect-square items-center justify-center outline-hidden transition-transform [&>svg]:shrink-0 after:absolute after:-inset-2 md:after:hidden group-data-[collapsible=icon]:hidden',
+					'text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground absolute top-3.5 right-3 w-5 rounded-md p-0 focus-visible:ring-2 [&>svg]:size-4 flex aspect-square items-center justify-center outline-hidden transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 md:after:hidden [&>svg]:shrink-0',
 					className,
 				),
 			},
@@ -489,7 +475,7 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<'li'>) {
 }
 
 const sidebarMenuButtonVariants = cva(
-	'ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground gap-2 rounded-md p-2 text-left text-sm transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! focus-visible:ring-2 data-active:font-medium peer/menu-button flex w-full items-center overflow-hidden outline-hidden group/menu-button disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&_svg]:size-4 [&_svg]:shrink-0',
+	'ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground gap-2 rounded-md p-2 text-left text-sm transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! focus-visible:ring-2 data-active:font-medium peer/menu-button group/menu-button flex w-full items-center overflow-hidden outline-hidden disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate',
 	{
 		variants: {
 			variant: {
@@ -517,11 +503,17 @@ function SidebarMenuButton({
 	size = 'default',
 	tooltip,
 	className,
+	nativeButton = true,
 	...props
 }: useRender.ComponentProps<'button'> &
 	React.ComponentProps<'button'> & {
 		isActive?: boolean;
 		tooltip?: string | React.ComponentProps<typeof TooltipContent>;
+		// Allow consumers to opt out of rendering a native <button> when
+		// supplying a custom `render` element (e.g. React Router `Link`).
+		// This mirrors the `nativeButton` prop used by the underlying
+		// primitive button so callers can pass `nativeButton={false}`.
+		nativeButton?: boolean;
 	} & VariantProps<typeof sidebarMenuButtonVariants>) {
 	const { isMobile, state } = useSidebar();
 	const comp = useRender({
@@ -532,7 +524,7 @@ function SidebarMenuButton({
 			},
 			props,
 		),
-		render: !tooltip ? render : TooltipTrigger,
+		render: !tooltip ? render : <TooltipTrigger render={render} />,
 		state: {
 			slot: 'sidebar-menu-button',
 			sidebar: 'menu-button',
@@ -580,7 +572,7 @@ function SidebarMenuAction({
 				className: cn(
 					'text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground peer-hover/menu-button:text-sidebar-accent-foreground absolute top-1.5 right-1 aspect-square w-5 rounded-md p-0 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 focus-visible:ring-2 [&>svg]:size-4 flex items-center justify-center outline-hidden transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 md:after:hidden [&>svg]:shrink-0',
 					showOnHover &&
-						'peer-data-active/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 aria-expanded:opacity-100 md:opacity-0',
+						'group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 peer-data-active/menu-button:text-sidebar-accent-foreground aria-expanded:opacity-100 md:opacity-0',
 					className,
 				),
 			},

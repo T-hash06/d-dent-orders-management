@@ -1,8 +1,57 @@
 import type { Route } from '.react-router/types/app/features/home/+types/home.layout';
-import { Outlet, redirect } from 'react-router';
+import {
+	Avatar,
+	AvatarFallback,
+	AvatarImage,
+	Button,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuLabel,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+	Sidebar,
+	SidebarContent,
+	SidebarFooter,
+	SidebarGroup,
+	SidebarGroupLabel,
+	SidebarHeader,
+	SidebarInset,
+	SidebarMenu,
+	SidebarMenuBadge,
+	SidebarMenuButton,
+	SidebarMenuItem,
+	SidebarProvider,
+	SidebarRail,
+	SidebarSeparator,
+	SidebarTrigger,
+} from '@full-stack-template/ui';
+import {
+	CaduceusIcon,
+	Computer,
+	CustomerServiceIcon,
+	DashboardSquare01Icon,
+	Moon,
+	PackageDeliveredIcon,
+	PackageIcon,
+	Sun,
+} from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { useQuery } from '@tanstack/react-query';
+import { useTheme } from 'next-themes';
+import { Link, Outlet, redirect, useLocation } from 'react-router';
 import { auth, type Session } from '@/features/.server/auth/better-auth.lib';
 import { SessionProvider } from '@/features/auth/auth.context';
-import { localizeHref } from '@/features/i18n/paraglide/runtime';
+import { signOut } from '@/features/auth/auth.lib';
+import { m } from '@/features/i18n/paraglide/messages';
+import {
+	getLocale,
+	localizeHref,
+	setLocale,
+} from '@/features/i18n/paraglide/runtime';
+import { useTRPC } from '@/features/trpc/trpc.context';
 
 export const loader = async ({
 	request,
@@ -26,10 +75,241 @@ export const loader = async ({
 
 export default function HomeLayout({ loaderData }: Route.ComponentProps) {
 	const session = loaderData;
+	const location = useLocation();
+	const trpc = useTRPC();
+	const { theme, setTheme } = useTheme();
+
+	const { data: homeOverview } = useQuery(
+		trpc.orders.getHomeOverview.queryOptions(),
+	);
+
+	const normalizedPath =
+		location.pathname.replace(/^\/(en|es)(?=\/|$)/, '') || '/';
+	const isProducts = normalizedPath.startsWith('/products');
+	const isOrders = normalizedPath.startsWith('/orders');
+	const isCustomers = normalizedPath.startsWith('/customers');
+	const isHome = !isProducts && !isOrders && !isCustomers;
+
+	const headerTitle = isProducts
+		? m.productsTitle()
+		: isOrders
+			? m.ordersTitle()
+			: isCustomers
+				? m.customersTitle()
+				: m.homePageTitle();
+
+	const headerDescription = isProducts
+		? m.productsDescription()
+		: isOrders
+			? m.ordersDescription()
+			: isCustomers
+				? m.customersDescription()
+				: m.homePageDescription();
+
+	const userName = session.user.name ?? m.greetingFallback();
+	const userInitials = userName
+		.split(' ')
+		.filter(Boolean)
+		.slice(0, 2)
+		.map((part) => part[0]?.toUpperCase())
+		.join('');
 
 	return (
 		<SessionProvider value={session}>
-			<Outlet />
+			<SidebarProvider>
+				<Sidebar variant="inset" collapsible="icon">
+					<SidebarHeader>
+						<SidebarMenu>
+							<SidebarMenuItem>
+								<SidebarMenuButton size="lg" isActive>
+									<div className="size-8 rounded-md min-w-8 bg-sidebar-primary/75 text-background flex items-center justify-center">
+										<HugeiconsIcon icon={CaduceusIcon} className="size-4" />
+									</div>
+									<div className="grid flex-1 text-left leading-tight">
+										<span className="truncate font-semibold text-sm tracking-tight">
+											{m.sidePanelAppName()}
+										</span>
+										<span className="truncate text-xs text-sidebar-foreground/70 tracking-wide">
+											{m.navigationGroupLabel()}
+										</span>
+									</div>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+						</SidebarMenu>
+					</SidebarHeader>
+
+					<SidebarContent>
+						<SidebarGroup>
+							<SidebarGroupLabel>{m.navigationGroupLabel()}</SidebarGroupLabel>
+							<SidebarMenu className="gap-1">
+								<SidebarMenuItem>
+									<SidebarMenuButton
+										render={<Link to={localizeHref('/')} />}
+										isActive={isHome}
+										tooltip={m.navHome()}
+										nativeButton={false}
+									>
+										<HugeiconsIcon
+											icon={DashboardSquare01Icon}
+											className="size-4"
+										/>
+										<span>{m.navHome()}</span>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+
+								<SidebarMenuItem>
+									<SidebarMenuButton
+										render={<Link to={localizeHref('/products')} />}
+										isActive={isProducts}
+										tooltip={m.navProducts()}
+										nativeButton={false}
+									>
+										<HugeiconsIcon icon={PackageIcon} className="size-4" />
+										<span>{m.navProducts()}</span>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+
+								<SidebarMenuItem>
+									<SidebarMenuButton
+										render={<Link to={localizeHref('/orders')} />}
+										isActive={isOrders}
+										tooltip={m.navOrders()}
+										nativeButton={false}
+									>
+										<HugeiconsIcon
+											icon={PackageDeliveredIcon}
+											className="size-4"
+										/>
+										<span>{m.navOrders()}</span>
+									</SidebarMenuButton>
+									{(homeOverview?.stats.myPendingOrders ?? 0) > 0 ? (
+										<SidebarMenuBadge>
+											{homeOverview?.stats.myPendingOrders}
+										</SidebarMenuBadge>
+									) : null}
+								</SidebarMenuItem>
+
+								<SidebarMenuItem>
+									<SidebarMenuButton
+										render={<Link to={localizeHref('/customers')} />}
+										isActive={isCustomers}
+										tooltip={m.navCustomers()}
+									>
+										<HugeiconsIcon
+											icon={CustomerServiceIcon}
+											className="size-4"
+										/>
+										<span>{m.navCustomers()}</span>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							</SidebarMenu>
+						</SidebarGroup>
+					</SidebarContent>
+
+					<SidebarFooter>
+						<SidebarSeparator />
+						<SidebarMenu>
+							<SidebarMenuItem>
+								<DropdownMenu>
+									<DropdownMenuTrigger render={<SidebarMenuButton size="lg" />}>
+										<Avatar className="h-8 w-8 rounded-md">
+											<AvatarImage
+												src={session.user.image ?? ''}
+												alt={userName}
+											/>
+											<AvatarFallback className="rounded-md">
+												{userInitials || 'U'}
+											</AvatarFallback>
+										</Avatar>
+										<div className="grid flex-1 text-left text-sm leading-tight">
+											<span className="truncate font-medium">{userName}</span>
+											<span className="truncate text-xs text-sidebar-foreground/70">
+												{session.user.email}
+											</span>
+										</div>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end" className="w-56">
+										<DropdownMenuGroup>
+											<DropdownMenuLabel>{m.selectTheme()}</DropdownMenuLabel>
+											<DropdownMenuRadioGroup
+												value={theme}
+												onValueChange={setTheme}
+											>
+												<DropdownMenuRadioItem value="system">
+													<HugeiconsIcon
+														icon={Computer}
+														className="mr-2 h-4 w-4"
+													/>
+													{m.themeSystem()}
+												</DropdownMenuRadioItem>
+												<DropdownMenuRadioItem value="light">
+													<HugeiconsIcon icon={Sun} className="mr-2 h-4 w-4" />
+													{m.themeLight()}
+												</DropdownMenuRadioItem>
+												<DropdownMenuRadioItem value="dark">
+													<HugeiconsIcon icon={Moon} className="mr-2 h-4 w-4" />
+													{m.themeDark()}
+												</DropdownMenuRadioItem>
+											</DropdownMenuRadioGroup>
+										</DropdownMenuGroup>
+
+										<DropdownMenuSeparator />
+
+										<DropdownMenuGroup>
+											<DropdownMenuLabel>
+												{m.selectLanguage()}
+											</DropdownMenuLabel>
+											<DropdownMenuRadioGroup
+												value={getLocale()}
+												onValueChange={(locale) => {
+													setLocale(locale);
+												}}
+											>
+												<DropdownMenuRadioItem value="en">
+													{m.languageEnglish()}
+												</DropdownMenuRadioItem>
+												<DropdownMenuRadioItem value="es">
+													{m.languageSpanish()}
+												</DropdownMenuRadioItem>
+											</DropdownMenuRadioGroup>
+										</DropdownMenuGroup>
+
+										<DropdownMenuSeparator />
+
+										<Button
+											variant="ghost"
+											size="sm"
+											className="w-full justify-start"
+											onClick={async () => {
+												await signOut();
+												window.location.href = localizeHref('/auth/login');
+											}}
+										>
+											{m.signOut()}
+										</Button>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							</SidebarMenuItem>
+						</SidebarMenu>
+					</SidebarFooter>
+					<SidebarRail />
+				</Sidebar>
+
+				<SidebarInset>
+					<header className="h-14 rounded-t-full border-b border-border bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/70 sticky top-0 z-20">
+						<div className="h-full px-4 md:px-6 flex items-center gap-3">
+							<SidebarTrigger className="-ml-1" />
+							<div className="min-w-0">
+								<p className="font-semibold truncate">{headerTitle}</p>
+								<p className="text-xs text-muted-foreground truncate hidden sm:block">
+									{headerDescription}
+								</p>
+							</div>
+						</div>
+					</header>
+					<Outlet />
+				</SidebarInset>
+			</SidebarProvider>
 		</SessionProvider>
 	);
 }

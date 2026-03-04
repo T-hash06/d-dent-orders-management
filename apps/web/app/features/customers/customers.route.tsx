@@ -1,5 +1,7 @@
 import {
 	Button,
+	Card,
+	CardContent,
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
@@ -48,6 +50,10 @@ export default function CustomersRoute() {
 		trpc.customers.getCustomers.queryOptions(),
 	);
 
+	const customersCount = customers.length;
+	const withPhone = customers.filter((customer) => customer.phone).length;
+	const withAddress = customers.filter((customer) => customer.address).length;
+
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -81,9 +87,9 @@ export default function CustomersRoute() {
 	});
 
 	return (
-		<div className="min-h-dvh bg-background">
-			<div className="mx-auto max-w-6xl px-6 py-8 space-y-6">
-				<div className="flex items-center justify-between">
+		<div className="bg-background">
+			<div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 md:py-8 space-y-6">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="space-y-0.5">
 						<h1 className="text-2xl font-bold tracking-tight">
 							{m.customersTitle()}
@@ -95,14 +101,41 @@ export default function CustomersRoute() {
 					<CreateCustomerDialog />
 				</div>
 
-				<div className="flex items-center gap-3">
+				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+					<Card>
+						<CardContent className="p-4 space-y-1">
+							<p className="text-xs text-muted-foreground">
+								{m.customersTotalStat()}
+							</p>
+							<p className="text-2xl font-semibold">{customersCount}</p>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardContent className="p-4 space-y-1">
+							<p className="text-xs text-muted-foreground">
+								{m.customersWithPhoneStat()}
+							</p>
+							<p className="text-2xl font-semibold">{withPhone}</p>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardContent className="p-4 space-y-1">
+							<p className="text-xs text-muted-foreground">
+								{m.customersWithAddressStat()}
+							</p>
+							<p className="text-2xl font-semibold">{withAddress}</p>
+						</CardContent>
+					</Card>
+				</div>
+
+				<div className="rounded-lg border border-border bg-card p-3 flex flex-col gap-3 sm:flex-row sm:items-center">
 					<Input
 						placeholder={m.customersSearchPlaceholder()}
 						value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
 						onChange={(event) =>
 							table.getColumn('name')?.setFilterValue(event.target.value)
 						}
-						className="max-w-xs h-8 text-sm"
+						className="w-full sm:max-w-xs h-8 text-sm"
 					/>
 					<DropdownMenu>
 						<DropdownMenuTrigger
@@ -110,7 +143,7 @@ export default function CustomersRoute() {
 								<Button
 									variant="outline"
 									size="sm"
-									className="ml-auto h-8 gap-2"
+									className="h-8 gap-2 sm:ml-auto"
 								/>
 							}
 						>
@@ -129,7 +162,7 @@ export default function CustomersRoute() {
 											checked={col.getIsVisible()}
 											onCheckedChange={(value) => col.toggleVisibility(!!value)}
 										>
-											{col.id}
+											{col.columnDef.meta?.name ?? col.id}
 										</DropdownMenuCheckboxItem>
 									))}
 							</DropdownMenuGroup>

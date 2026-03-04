@@ -1,5 +1,7 @@
 import {
 	Button,
+	Card,
+	CardContent,
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
@@ -49,6 +51,14 @@ export default function OrdersRoute() {
 	const { data: orders = [], isLoading } = useQuery(
 		trpc.orders.getOrders.queryOptions(),
 	);
+
+	const pendingOrders = orders.filter(
+		(order) => order.status === 'pending',
+	).length;
+	const inProgressOrders = orders.filter(
+		(order) => order.status === 'in_progress',
+	).length;
+	const lateOrders = orders.filter((order) => order.isLate).length;
 
 	const completeMutation = useMutation(
 		trpc.orders.completeOrder.mutationOptions({
@@ -128,9 +138,9 @@ export default function OrdersRoute() {
 	});
 
 	return (
-		<div className="min-h-dvh bg-background">
-			<div className="mx-auto max-w-6xl px-6 py-8 space-y-6">
-				<div className="flex items-center justify-between">
+		<div className="bg-background">
+			<div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 md:py-8 space-y-6">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="space-y-0.5">
 						<h1 className="text-2xl font-bold tracking-tight">
 							{m.ordersTitle()}
@@ -142,7 +152,34 @@ export default function OrdersRoute() {
 					<CreateOrderDialog />
 				</div>
 
-				<div className="flex items-center gap-3">
+				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+					<Card>
+						<CardContent className="p-4 space-y-1">
+							<p className="text-xs text-muted-foreground">
+								{m.ordersPendingStat()}
+							</p>
+							<p className="text-2xl font-semibold">{pendingOrders}</p>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardContent className="p-4 space-y-1">
+							<p className="text-xs text-muted-foreground">
+								{m.ordersInProgressStat()}
+							</p>
+							<p className="text-2xl font-semibold">{inProgressOrders}</p>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardContent className="p-4 space-y-1">
+							<p className="text-xs text-muted-foreground">
+								{m.ordersLateStat()}
+							</p>
+							<p className="text-2xl font-semibold">{lateOrders}</p>
+						</CardContent>
+					</Card>
+				</div>
+
+				<div className="rounded-lg border border-border bg-card p-3 flex flex-col gap-3 sm:flex-row sm:items-center">
 					<Input
 						placeholder={m.ordersSearchPlaceholder()}
 						value={
@@ -151,7 +188,7 @@ export default function OrdersRoute() {
 						onChange={(event) =>
 							table.getColumn('customer')?.setFilterValue(event.target.value)
 						}
-						className="max-w-xs h-8 text-sm"
+						className="w-full sm:max-w-xs h-8 text-sm"
 					/>
 					<DropdownMenu>
 						<DropdownMenuTrigger
@@ -159,7 +196,7 @@ export default function OrdersRoute() {
 								<Button
 									variant="outline"
 									size="sm"
-									className="ml-auto h-8 gap-2"
+									className="h-8 gap-2 sm:ml-auto"
 								/>
 							}
 						>
