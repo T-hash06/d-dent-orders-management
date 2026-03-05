@@ -112,7 +112,7 @@ export function getProductColumns({
 			accessorKey: 'price',
 			header: () => <div className="text-right">{m.productPrice()}</div>,
 			cell: ({ row }) => {
-				const price = row.getValue('price') as number;
+				const price = row.getValue<number>('price');
 				const formatted = new Intl.NumberFormat('es-CO', {
 					style: 'currency',
 					currency: 'COP',

@@ -226,7 +226,7 @@ const OrdersRouteTable = () => {
 					completeMutation.mutate({ orderId: order.id });
 				},
 			}),
-		[setEditOrder, setDeleteOrder, completeMutation],
+		[setEditOrder, setDeleteOrder, completeMutation.mutate],
 	);
 
 	const table = useReactTable({

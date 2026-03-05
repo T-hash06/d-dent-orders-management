@@ -154,7 +154,7 @@ export function getOrderColumns({
 				name: m.orderExpectedDelivery(),
 			},
 			cell: ({ row }) => {
-				const date = row.getValue('expectedDeliveryAt') as Date;
+				const date = row.getValue<Date>('expectedDeliveryAt');
 				const formatted = new Intl.DateTimeFormat(getLocale(), {
 					year: 'numeric',
 					month: 'short',
