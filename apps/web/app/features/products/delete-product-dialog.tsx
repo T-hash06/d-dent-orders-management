@@ -10,12 +10,12 @@ import {
 	toast,
 } from '@full-stack-template/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Product } from '@/features/.server/products/product.types';
+import type { ProductPreview } from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 type DeleteProductDialogProps = {
-	product: Product | null;
+	product: ProductPreview | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };
@@ -41,7 +41,7 @@ export function DeleteProductDialog({
 
 				queryClient.setQueryData(
 					trpc.products.getProducts.queryKey(),
-					(old: Product[] | undefined) =>
+					(old: ProductPreview[] | undefined) =>
 						(old ?? []).filter((p) => p.id !== variables.id),
 				);
 

@@ -145,6 +145,7 @@ export default function HomeLayout({ loaderData }: Route.ComponentProps) {
 								<SidebarMenuItem>
 									<SidebarMenuButton
 										render={<Link to={localizeHref('/')} />}
+										className="transition-colors"
 										isActive={isHome}
 										tooltip={m.navHome()}
 										nativeButton={false}
@@ -160,6 +161,7 @@ export default function HomeLayout({ loaderData }: Route.ComponentProps) {
 								<SidebarMenuItem>
 									<SidebarMenuButton
 										render={<Link to={localizeHref('/products')} />}
+										className="transition-colors"
 										isActive={isProducts}
 										tooltip={m.navProducts()}
 										nativeButton={false}
@@ -172,6 +174,7 @@ export default function HomeLayout({ loaderData }: Route.ComponentProps) {
 								<SidebarMenuItem>
 									<SidebarMenuButton
 										render={<Link to={localizeHref('/orders')} />}
+										className="transition-colors"
 										isActive={isOrders}
 										tooltip={m.navOrders()}
 										nativeButton={false}
@@ -192,6 +195,7 @@ export default function HomeLayout({ loaderData }: Route.ComponentProps) {
 								<SidebarMenuItem>
 									<SidebarMenuButton
 										render={<Link to={localizeHref('/customers')} />}
+										className="transition-colors"
 										isActive={isCustomers}
 										tooltip={m.navCustomers()}
 									>
@@ -211,7 +215,14 @@ export default function HomeLayout({ loaderData }: Route.ComponentProps) {
 						<SidebarMenu>
 							<SidebarMenuItem>
 								<DropdownMenu>
-									<DropdownMenuTrigger render={<SidebarMenuButton size="lg" />}>
+									<DropdownMenuTrigger
+										render={
+											<SidebarMenuButton
+												size="lg"
+												className="transition-colors"
+											/>
+										}
+									>
 										<Avatar className="h-8 w-8 rounded-md">
 											<AvatarImage
 												src={session.user.image ?? ''}

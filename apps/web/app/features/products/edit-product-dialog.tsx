@@ -17,7 +17,7 @@ import {
 } from '@full-stack-template/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type SubmitEvent, useCallback, useEffect } from 'react';
-import type { Product } from '@/features/.server/products/product.types';
+import type { ProductPreview } from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import {
 	editProductFormOptions,
@@ -26,7 +26,7 @@ import {
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 type EditProductDialogProps = {
-	product: Product | null;
+	product: ProductPreview | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };
@@ -52,7 +52,7 @@ export function EditProductDialog({
 
 				queryClient.setQueryData(
 					trpc.products.getProducts.queryKey(),
-					(old: Product[] | undefined) =>
+					(old: ProductPreview[] | undefined) =>
 						(old ?? []).map((p) =>
 							p.id === variables.id
 								? { ...p, ...variables, updatedAt: new Date() }

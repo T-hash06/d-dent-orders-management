@@ -20,7 +20,7 @@ import { Plus } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type SubmitEvent, useCallback, useState } from 'react';
-import type { Product } from '@/features/.server/products/product.types';
+import type { ProductPreview } from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import {
 	CREATE_PRODUCT_FORM_OPTIONS,
@@ -46,10 +46,11 @@ export function CreateProductDialog() {
 
 				queryClient.setQueryData(
 					trpc.products.getProducts.queryKey(),
-					(old: Product[] | undefined) => [
+					(old: ProductPreview[] | undefined) => [
 						...(old ?? []),
 						{
 							id: `temp-${Date.now()}`,
+							hasPendingOrders: true,
 							name: variables.name,
 							type: variables.type,
 							variant: variables.variant,
@@ -58,7 +59,7 @@ export function CreateProductDialog() {
 							updatedAt: new Date(),
 							createdById: 'temp',
 							updatedById: 'temp',
-						} satisfies Product,
+						} satisfies ProductPreview,
 					],
 				);
 

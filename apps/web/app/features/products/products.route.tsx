@@ -39,7 +39,7 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { PageHeader } from '@/components/layout/page-header';
 import { StatBar } from '@/components/ui/stat-bar';
-import type { Product } from '@/features/.server/products/product.types';
+import type { ProductPreview } from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import { CreateProductDialog } from '@/features/products/create-product-dialog';
 import { DeleteProductDialog } from '@/features/products/delete-product-dialog';
@@ -52,8 +52,8 @@ interface ProductStoreState {
 	columnFilters: ColumnFiltersState;
 	columnVisibility: VisibilityState;
 	rowSelection: Record<string, boolean>;
-	editProduct: Product | null;
-	deleteProduct: Product | null;
+	editProduct: ProductPreview | null;
+	deleteProduct: ProductPreview | null;
 }
 
 interface ProductStoreActions {
@@ -61,8 +61,8 @@ interface ProductStoreActions {
 	setColumnFilters: OnChangeFn<ColumnFiltersState>;
 	setColumnVisibility: OnChangeFn<VisibilityState>;
 	setRowSelection: OnChangeFn<Record<string, boolean>>;
-	setEditProduct: (product: Product | null) => void;
-	setDeleteProduct: (product: Product | null) => void;
+	setEditProduct: (product: ProductPreview | null) => void;
+	setDeleteProduct: (product: ProductPreview | null) => void;
 }
 
 const useProductStore = create<ProductStoreState & ProductStoreActions>(
@@ -110,7 +110,7 @@ const useProductStore = create<ProductStoreState & ProductStoreActions>(
 	}),
 );
 
-const emptyProductsFallback: Product[] = [];
+const emptyProductsFallback: ProductPreview[] = [];
 
 const ProductsRouteHeader = () => (
 	<PageHeader

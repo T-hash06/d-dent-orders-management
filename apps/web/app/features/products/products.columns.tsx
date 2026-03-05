@@ -19,18 +19,18 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import type { Product } from '@/features/.server/products/product.types';
+import type { ProductPreview } from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
 
 type ProductColumnsProps = {
-	onEdit: (product: Product) => void;
-	onDelete: (product: Product) => void;
+	onEdit: (product: ProductPreview) => void;
+	onDelete: (product: ProductPreview) => void;
 };
 
 export function getProductColumns({
 	onEdit,
 	onDelete,
-}: ProductColumnsProps): ColumnDef<Product>[] {
+}: ProductColumnsProps): ColumnDef<ProductPreview>[] {
 	return [
 		{
 			id: 'select',
