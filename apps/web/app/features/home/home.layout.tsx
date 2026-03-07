@@ -1,4 +1,3 @@
-import type { Route } from '.react-router/types/app/features/home/+types/home.layout';
 import {
 	Avatar,
 	AvatarFallback,
@@ -43,6 +42,11 @@ import { useQuery } from '@tanstack/react-query';
 import { useTheme } from 'next-themes';
 import { Link, Outlet, redirect, useLocation } from 'react-router';
 import {
+	EMPTY_PERMISSIONS,
+	getPermissionsByRole,
+	type Permissions,
+} from '@/features/.server/auth/better-auth-roles.constant';
+import {
 	auth,
 	type Session,
 } from '@/features/.server/auth/better-auth-server.lib';
@@ -55,15 +59,17 @@ import {
 	setLocale,
 } from '@/features/i18n/paraglide/runtime';
 import { useTRPC } from '@/features/trpc/trpc.context';
+import type { Route } from './+types/home.layout';
 
-export const loader = async ({
-	request,
-}: Route.LoaderArgs): Promise<Session> => {
+export const loader = async ({ request }: Route.LoaderArgs) => {
 	let session: Session | null = null;
+	let permissions: Permissions = EMPTY_PERMISSIONS;
+
 	try {
 		session = await auth.api.getSession({
 			headers: request.headers,
 		});
+		permissions = getPermissionsByRole(session?.user.role);
 	} catch (error) {
 		console.error('Error fetching session:', error);
 		throw error;
@@ -73,7 +79,7 @@ export const loader = async ({
 		throw redirect(localizeHref('/auth/login'));
 	}
 
-	return session;
+	return { ...session, permissions };
 };
 
 export default function HomeLayout({ loaderData }: Route.ComponentProps) {
@@ -161,54 +167,60 @@ export default function HomeLayout({ loaderData }: Route.ComponentProps) {
 									</SidebarMenuButton>
 								</SidebarMenuItem>
 
-								<SidebarMenuItem>
-									<SidebarMenuButton
-										render={<Link to={localizeHref('/products')} />}
-										className="transition-colors"
-										isActive={isProducts}
-										tooltip={m.navProducts()}
-										nativeButton={false}
-									>
-										<HugeiconsIcon icon={PackageIcon} className="size-4" />
-										<span>{m.navProducts()}</span>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
+								{session.permissions.products.includes('list') && (
+									<SidebarMenuItem>
+										<SidebarMenuButton
+											render={<Link to={localizeHref('/products')} />}
+											className="transition-colors"
+											isActive={isProducts}
+											tooltip={m.navProducts()}
+											nativeButton={false}
+										>
+											<HugeiconsIcon icon={PackageIcon} className="size-4" />
+											<span>{m.navProducts()}</span>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+								)}
 
-								<SidebarMenuItem>
-									<SidebarMenuButton
-										render={<Link to={localizeHref('/orders')} />}
-										className="transition-colors"
-										isActive={isOrders}
-										tooltip={m.navOrders()}
-										nativeButton={false}
-									>
-										<HugeiconsIcon
-											icon={PackageDeliveredIcon}
-											className="size-4"
-										/>
-										<span>{m.navOrders()}</span>
-									</SidebarMenuButton>
-									{(homeOverview?.stats.myPendingOrders ?? 0) > 0 ? (
-										<SidebarMenuBadge>
-											{homeOverview?.stats.myPendingOrders}
-										</SidebarMenuBadge>
-									) : null}
-								</SidebarMenuItem>
+								{session.permissions.orders.includes('list') && (
+									<SidebarMenuItem>
+										<SidebarMenuButton
+											render={<Link to={localizeHref('/orders')} />}
+											className="transition-colors"
+											isActive={isOrders}
+											tooltip={m.navOrders()}
+											nativeButton={false}
+										>
+											<HugeiconsIcon
+												icon={PackageDeliveredIcon}
+												className="size-4"
+											/>
+											<span>{m.navOrders()}</span>
+										</SidebarMenuButton>
+										{(homeOverview?.stats.myPendingOrders ?? 0) > 0 ? (
+											<SidebarMenuBadge>
+												{homeOverview?.stats.myPendingOrders}
+											</SidebarMenuBadge>
+										) : null}
+									</SidebarMenuItem>
+								)}
 
-								<SidebarMenuItem>
-									<SidebarMenuButton
-										render={<Link to={localizeHref('/customers')} />}
-										className="transition-colors"
-										isActive={isCustomers}
-										tooltip={m.navCustomers()}
-									>
-										<HugeiconsIcon
-											icon={CustomerServiceIcon}
-											className="size-4"
-										/>
-										<span>{m.navCustomers()}</span>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
+								{session.permissions.customers.includes('list') && (
+									<SidebarMenuItem>
+										<SidebarMenuButton
+											render={<Link to={localizeHref('/customers')} />}
+											className="transition-colors"
+											isActive={isCustomers}
+											tooltip={m.navCustomers()}
+										>
+											<HugeiconsIcon
+												icon={CustomerServiceIcon}
+												className="size-4"
+											/>
+											<span>{m.navCustomers()}</span>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+								)}
 							</SidebarMenu>
 						</SidebarGroup>
 					</SidebarContent>

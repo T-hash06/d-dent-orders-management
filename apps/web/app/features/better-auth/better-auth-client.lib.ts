@@ -1,7 +1,9 @@
+import { adminClient } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
 
 const authClient = createAuthClient({
 	baseURL: `${import.meta.env.VITE_APP_API_URL}/auth`,
+	plugins: [adminClient()],
 	fetchOptions: {
 		credentials: 'include',
 	},
@@ -14,6 +16,29 @@ type ErrorTypes = Record<
 
 export const errorCodes = {
 	USER_ALREADY_EXISTS: 'userAlreadyExists',
+	YOU_CANNOT_BAN_YOURSELF: 'youCannotBanYourself',
+	YOU_ARE_NOT_ALLOWED_TO_CHANGE_USERS_ROLE: 'youAreNotAllowedToChangeUsersRole',
+	YOU_ARE_NOT_ALLOWED_TO_CREATE_USERS: 'youAreNotAllowedToCreateUsers',
+	YOU_ARE_NOT_ALLOWED_TO_LIST_USERS: 'youAreNotAllowedToListUsers',
+	YOU_ARE_NOT_ALLOWED_TO_UPDATE_USERS: 'youAreNotAllowedToUpdateUsers',
+	YOU_CANNOT_REMOVE_YOURSELF: 'youCannotRemoveYourself',
+	YOU_ARE_NOT_ALLOWED_TO_LIST_USERS_SESSIONS:
+		'youAreNotAllowedToListUsersSessions',
+	YOU_ARE_NOT_ALLOWED_TO_BAN_USERS: 'youAreNotAllowedToBanUsers',
+	YOU_ARE_NOT_ALLOWED_TO_IMPERSONATE_USERS:
+		'youAreNotAllowedToImpersonateUsers',
+	YOU_ARE_NOT_ALLOWED_TO_REVOKE_USERS_SESSIONS:
+		'youAreNotAllowedToRevokeUsersSessions',
+	YOU_ARE_NOT_ALLOWED_TO_DELETE_USERS: 'youAreNotAllowedToDeleteUsers',
+	YOU_ARE_NOT_ALLOWED_TO_SET_USERS_PASSWORD:
+		'youAreNotAllowedToSetUsersPassword',
+	NO_DATA_TO_UPDATE: 'noDataToUpdate',
+	YOU_ARE_NOT_ALLOWED_TO_SET_NON_EXISTENT_VALUE:
+		'youAreNotAllowedToSetNonExistentValue',
+	YOU_CANNOT_IMPERSONATE_ADMINS: 'youCannotImpersonateAdmins',
+	INVALID_ROLE_TYPE: 'invalidRoleType',
+	BANNED_USER: 'bannedUser',
+	YOU_ARE_NOT_ALLOWED_TO_GET_USER: 'youAreNotAllowedToGetUser',
 	ACCOUNT_NOT_FOUND: 'accountNotFound',
 	ASYNC_VALIDATION_NOT_SUPPORTED: 'asyncValidationNotSupported',
 	CALLBACK_URL_REQUIRED: 'callbackUrlRequired',

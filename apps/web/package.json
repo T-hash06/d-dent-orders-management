@@ -10,6 +10,7 @@
 		"drizzle-kit:migrate": "drizzle-kit migrate --config './app/features/.server/drizzle/drizzle.config.ts'",
 		"drizzle-kit:push": "drizzle-kit push --config './app/features/.server/drizzle/drizzle.config.ts'",
 		"drizzle-kit:studio": "drizzle-kit studio --config './app/features/.server/drizzle/drizzle.config.ts'",
+		"drizzle-kit:seed": "tsx ./app/features/.server/drizzle/drizzle.seed.ts",
 		"machine-translate": "inlang machine translate --project project.inlang",
 		"inlang": "inlang",
 		"start": "react-router-serve ./build/server/index.js",
