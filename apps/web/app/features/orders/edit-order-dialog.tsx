@@ -53,6 +53,16 @@ type EditOrderDialogProps = {
 	onOpenChange: (open: boolean) => void;
 };
 
+const getProductSearchLabel = (product: {
+	name?: string | null;
+	type?: string | null;
+	variant?: string | null;
+}) =>
+	[product.name, product.type, product.variant]
+		.map((value) => value?.trim() ?? '')
+		.filter(Boolean)
+		.join(' ');
+
 export function EditOrderDialog({
 	order,
 	open,
@@ -166,9 +176,18 @@ export function EditOrderDialog({
 										<div>
 											<Combobox
 												value={selectedCustomer}
-												onValueChange={(value) =>
-													field.handleChange(value?.id ?? '')
-												}
+												onValueChange={(value) => {
+													field.handleChange(value?.id ?? '');
+													if (value?.address) {
+														form.setFieldValue(
+															'deliveryAddress',
+															value.address,
+															{
+																dontUpdateMeta: true,
+															},
+														);
+													}
+												}}
 												disabled={isLoading}
 												items={customers}
 												itemToStringLabel={(item) => item.name}
@@ -382,7 +401,7 @@ export function EditOrderDialog({
 								type="button"
 								variant="outline"
 								size="sm"
-								className="h-7 gap-1.5 text-xs px-2"
+								className="h-10 sm:h-7 gap-1.5 text-xs px-2"
 								onClick={() =>
 									form.pushFieldValue('items', {
 										productId: '',
@@ -408,9 +427,9 @@ export function EditOrderDialog({
 												// biome-ignore lint/suspicious/noArrayIndexKey: order items are positional
 												index
 											}`}
-											className="rounded-lg border border-border p-4 space-y-3"
+											className="rounded-lg border border-border p-4"
 										>
-											<div className="flex items-center justify-between">
+											<div className="mb-3 flex items-center justify-between">
 												<p className="text-xs font-medium text-muted-foreground">
 													#{index + 1}
 												</p>
@@ -419,7 +438,7 @@ export function EditOrderDialog({
 														type="button"
 														variant="ghost"
 														size="icon"
-														className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+														className="h-11 w-11 sm:h-8 sm:w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
 														onClick={() =>
 															form.removeFieldValue('items', index)
 														}
@@ -433,124 +452,148 @@ export function EditOrderDialog({
 												)}
 											</div>
 
-											<form.Field name={`items[${index}].productId`}>
-												{(field) => {
-													const isInvalid =
-														field.state.meta.isTouched &&
-														!field.state.meta.isValid;
+											<div className="grid gap-3 md:grid-cols-12 md:items-start">
+												<div className="md:col-span-7">
+													<form.Field name={`items[${index}].productId`}>
+														{(field) => {
+															const isInvalid =
+																field.state.meta.isTouched &&
+																!field.state.meta.isValid;
 
-													const selectedProduct =
-														products.find(
-															(product) => product.id === field.state.value,
-														) ?? null;
+															const selectedProduct =
+																products.find(
+																	(product) => product.id === field.state.value,
+																) ?? null;
 
-													return (
-														<Field data-invalid={isInvalid}>
-															<FieldLabel>{m.orderItemProduct()}</FieldLabel>
-															<div>
-																<Combobox
-																	value={selectedProduct}
-																	onValueChange={(value) =>
-																		field.handleChange(value?.id ?? '')
-																	}
-																	disabled={isLoading}
-																	items={products}
-																	itemToStringLabel={(item) => item.name}
-																>
-																	<ComboboxInput
+															return (
+																<Field data-invalid={isInvalid}>
+																	<FieldLabel>
+																		{m.orderItemProduct()}
+																	</FieldLabel>
+																	<div>
+																		<Combobox
+																			value={selectedProduct}
+																			onValueChange={(value) => {
+																				field.handleChange(value?.id ?? '');
+																				form.setFieldValue(
+																					`items[${index}].price` as const,
+																					value ? String(value.price) : '',
+																					{ dontUpdateMeta: true },
+																				);
+																			}}
+																			disabled={isLoading}
+																			items={products}
+																			filter={(item, query) =>
+																				getProductSearchLabel(item)
+																					.toLocaleLowerCase()
+																					.includes(
+																						query.trim().toLocaleLowerCase(),
+																					)
+																			}
+																			itemToStringLabel={(item) => item.name}
+																		>
+																			<ComboboxInput
+																				id={field.name}
+																				name={field.name}
+																				placeholder={m.orderItemProductPlaceholder()}
+																				aria-invalid={isInvalid}
+																				onBlur={() => field.handleBlur()}
+																			/>
+																			<ComboboxContent>
+																				<ComboboxEmpty>
+																					{m.noResults()}
+																				</ComboboxEmpty>
+																				<ComboboxList>
+																					{(item) => (
+																						<ComboboxItem
+																							key={item.id}
+																							value={item}
+																						>
+																							{item.name}
+																						</ComboboxItem>
+																					)}
+																				</ComboboxList>
+																			</ComboboxContent>
+																		</Combobox>
+																	</div>
+																	<FieldError
+																		errors={field.state.meta.errors}
+																	/>
+																</Field>
+															);
+														}}
+													</form.Field>
+												</div>
+
+												<div className="grid gap-3 sm:grid-cols-2 md:col-span-5">
+													<form.Field name={`items[${index}].quantity`}>
+														{(field) => {
+															const isInvalid =
+																field.state.meta.isTouched &&
+																!field.state.meta.isValid;
+
+															return (
+																<Field data-invalid={isInvalid}>
+																	<FieldLabel htmlFor={field.name}>
+																		{m.orderItemQuantity()}
+																	</FieldLabel>
+																	<Input
 																		id={field.name}
 																		name={field.name}
-																		placeholder={m.orderItemProductPlaceholder()}
+																		type="number"
+																		min="1"
+																		step="1"
+																		placeholder={m.orderItemQuantityPlaceholder()}
 																		aria-invalid={isInvalid}
+																		value={field.state.value}
+																		onChange={(e) =>
+																			field.handleChange(e.target.value)
+																		}
 																		onBlur={() => field.handleBlur()}
+																		disabled={isLoading}
 																	/>
-																	<ComboboxContent>
-																		<ComboboxEmpty>
-																			{m.noResults()}
-																		</ComboboxEmpty>
-																		<ComboboxList>
-																			{(item) => (
-																				<ComboboxItem
-																					key={item.id}
-																					value={item}
-																				>
-																					{item.name}
-																				</ComboboxItem>
-																			)}
-																		</ComboboxList>
-																	</ComboboxContent>
-																</Combobox>
-															</div>
-															<FieldError errors={field.state.meta.errors} />
-														</Field>
-													);
-												}}
-											</form.Field>
+																	<FieldError
+																		errors={field.state.meta.errors}
+																	/>
+																</Field>
+															);
+														}}
+													</form.Field>
 
-											<div className="grid grid-cols-2 gap-3">
-												<form.Field name={`items[${index}].quantity`}>
-													{(field) => {
-														const isInvalid =
-															field.state.meta.isTouched &&
-															!field.state.meta.isValid;
+													<form.Field name={`items[${index}].price`}>
+														{(field) => {
+															const isInvalid =
+																field.state.meta.isTouched &&
+																!field.state.meta.isValid;
 
-														return (
-															<Field data-invalid={isInvalid}>
-																<FieldLabel htmlFor={field.name}>
-																	{m.orderItemQuantity()}
-																</FieldLabel>
-																<Input
-																	id={field.name}
-																	name={field.name}
-																	type="number"
-																	min="1"
-																	step="1"
-																	placeholder={m.orderItemQuantityPlaceholder()}
-																	aria-invalid={isInvalid}
-																	value={field.state.value}
-																	onChange={(e) =>
-																		field.handleChange(e.target.value)
-																	}
-																	onBlur={() => field.handleBlur()}
-																	disabled={isLoading}
-																/>
-																<FieldError errors={field.state.meta.errors} />
-															</Field>
-														);
-													}}
-												</form.Field>
-
-												<form.Field name={`items[${index}].price`}>
-													{(field) => {
-														const isInvalid =
-															field.state.meta.isTouched &&
-															!field.state.meta.isValid;
-
-														return (
-															<Field data-invalid={isInvalid}>
-																<FieldLabel htmlFor={field.name}>
-																	{m.orderItemPrice()}
-																</FieldLabel>
-																<Input
-																	id={field.name}
-																	name={field.name}
-																	type="number"
-																	min="0"
-																	step="50"
-																	placeholder={m.orderItemPricePlaceholder()}
-																	aria-invalid={isInvalid}
-																	value={field.state.value}
-																	onChange={(e) =>
-																		field.handleChange(e.target.value)
-																	}
-																	onBlur={() => field.handleBlur()}
-																	disabled={isLoading}
-																/>
-																<FieldError errors={field.state.meta.errors} />
-															</Field>
-														);
-													}}
-												</form.Field>
+															return (
+																<Field data-invalid={isInvalid}>
+																	<FieldLabel htmlFor={field.name}>
+																		{m.orderItemPrice()}
+																	</FieldLabel>
+																	<Input
+																		id={field.name}
+																		name={field.name}
+																		type="number"
+																		min="0"
+																		step="50"
+																		placeholder={m.orderItemPricePlaceholder()}
+																		aria-invalid={isInvalid}
+																		value={field.state.value}
+																		onChange={(e) =>
+																			field.handleChange(e.target.value)
+																		}
+																		onBlur={() => field.handleBlur()}
+																		disabled={isLoading}
+																	/>
+																	<FieldError
+																		errors={field.state.meta.errors}
+																	/>
+																</Field>
+															);
+														}}
+													</form.Field>
+												</div>
 											</div>
 										</div>
 									))}

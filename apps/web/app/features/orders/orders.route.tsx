@@ -1,5 +1,6 @@
 import {
 	Button,
+	Calendar,
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
@@ -7,7 +8,18 @@ import {
 	DropdownMenuTrigger,
 	Empty,
 	Input,
+	Label,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Skeleton,
+	Switch,
 	Table,
 	TableBody,
 	TableCell,
@@ -20,6 +32,7 @@ import {
 	ArrowLeft01Icon,
 	ArrowRight01Icon,
 	FilterHorizontalIcon,
+	Trash,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -35,6 +48,7 @@ import {
 	useReactTable,
 	type VisibilityState,
 } from '@tanstack/react-table';
+import { enUS, es } from 'date-fns/locale';
 import { useMemo } from 'react';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
@@ -42,9 +56,11 @@ import { PageHeader } from '@/components/layout/page-header';
 import { StatBar } from '@/components/ui/stat-bar';
 import type { Order } from '@/features/.server/orders/order.types';
 import { m } from '@/features/i18n/paraglide/messages';
+import { getLocale } from '@/features/i18n/paraglide/runtime';
 import { CreateOrderDialog } from '@/features/orders/create-order-dialog';
 import { DeleteOrderDialog } from '@/features/orders/delete-order-dialog';
 import { EditOrderDialog } from '@/features/orders/edit-order-dialog';
+import type { OrderStatus } from '@/features/orders/order-status';
 import { getOrderColumns } from '@/features/orders/orders.columns';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
@@ -53,6 +69,10 @@ interface OrderStoreState {
 	columnFilters: ColumnFiltersState;
 	columnVisibility: VisibilityState;
 	rowSelection: Record<string, boolean>;
+	lateOnly: boolean;
+	statusFilter: OrderStatus | null;
+	expectedDeliveryFrom: Date | null;
+	expectedDeliveryTo: Date | null;
 	editOrder: Order | null;
 	deleteOrder: Order | null;
 }
@@ -62,6 +82,9 @@ interface OrderStoreActions {
 	setColumnFilters: OnChangeFn<ColumnFiltersState>;
 	setColumnVisibility: OnChangeFn<VisibilityState>;
 	setRowSelection: OnChangeFn<Record<string, boolean>>;
+	setLateOnly: (lateOnly: boolean) => void;
+	setStatusFilter: (status: OrderStatus | null) => void;
+	setExpectedDeliveryRange: (from: Date | null, to: Date | null) => void;
 	setEditOrder: (order: Order | null) => void;
 	setDeleteOrder: (order: Order | null) => void;
 }
@@ -71,6 +94,10 @@ const useOrderStore = create<OrderStoreState & OrderStoreActions>((set) => ({
 	columnFilters: [],
 	columnVisibility: {},
 	rowSelection: {},
+	lateOnly: false,
+	statusFilter: null,
+	expectedDeliveryFrom: null,
+	expectedDeliveryTo: null,
 	editOrder: null,
 	deleteOrder: null,
 	setSorting: (updater) => {
@@ -103,6 +130,10 @@ const useOrderStore = create<OrderStoreState & OrderStoreActions>((set) => ({
 			return { rowSelection: newRowSelection };
 		});
 	},
+	setLateOnly: (lateOnly) => set({ lateOnly }),
+	setStatusFilter: (statusFilter) => set({ statusFilter }),
+	setExpectedDeliveryRange: (expectedDeliveryFrom, expectedDeliveryTo) =>
+		set({ expectedDeliveryFrom, expectedDeliveryTo }),
 	setEditOrder: (editOrder) => set({ editOrder }),
 	setDeleteOrder: (deleteOrder) => set({ deleteOrder }),
 }));
@@ -145,19 +176,22 @@ const OrdersRouteStats = () => {
 const OrdersRouteTable = () => {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
-	const { data: orders = emptyOrdersFallback, isLoading } = useQuery(
-		trpc.orders.getOrders.queryOptions(),
-	);
-
 	const [
 		sorting,
 		columnFilters,
 		columnVisibility,
 		rowSelection,
+		lateOnly,
+		statusFilter,
+		expectedDeliveryFrom,
+		expectedDeliveryTo,
 		setSorting,
 		setColumnFilters,
 		setColumnVisibility,
 		setRowSelection,
+		setLateOnly,
+		setStatusFilter,
+		setExpectedDeliveryRange,
 		setEditOrder,
 		setDeleteOrder,
 	] = useOrderStore(
@@ -166,28 +200,66 @@ const OrdersRouteTable = () => {
 			store.columnFilters,
 			store.columnVisibility,
 			store.rowSelection,
+			store.lateOnly,
+			store.statusFilter,
+			store.expectedDeliveryFrom,
+			store.expectedDeliveryTo,
 			store.setSorting,
 			store.setColumnFilters,
 			store.setColumnVisibility,
 			store.setRowSelection,
+			store.setLateOnly,
+			store.setStatusFilter,
+			store.setExpectedDeliveryRange,
 			store.setEditOrder,
 			store.setDeleteOrder,
 		]),
+	);
+
+	const getOrdersQueryInput = useMemo(() => {
+		if (
+			!lateOnly &&
+			statusFilter === null &&
+			expectedDeliveryFrom === null &&
+			expectedDeliveryTo === null
+		) {
+			return undefined;
+		}
+
+		const expectedDeliveryFromFilter = expectedDeliveryFrom
+			? new Date(expectedDeliveryFrom)
+			: null;
+		expectedDeliveryFromFilter?.setHours(0, 0, 0, 0);
+
+		const expectedDeliveryToFilter = expectedDeliveryTo
+			? new Date(expectedDeliveryTo)
+			: null;
+		expectedDeliveryToFilter?.setHours(23, 59, 59, 999);
+
+		return {
+			lateOnly: lateOnly ? true : undefined,
+			status: statusFilter ?? undefined,
+			expectedDeliveryFrom: expectedDeliveryFromFilter?.toISOString(),
+			expectedDeliveryTo: expectedDeliveryToFilter?.toISOString(),
+		};
+	}, [lateOnly, statusFilter, expectedDeliveryFrom, expectedDeliveryTo]);
+
+	const getOrdersQueryKey = trpc.orders.getOrders.queryKey(getOrdersQueryInput);
+	const { data: orders = emptyOrdersFallback, isLoading } = useQuery(
+		trpc.orders.getOrders.queryOptions(getOrdersQueryInput),
 	);
 
 	const completeMutation = useMutation(
 		trpc.orders.completeOrder.mutationOptions({
 			onMutate: async (variables) => {
 				await queryClient.cancelQueries({
-					queryKey: trpc.orders.getOrders.queryKey(),
+					queryKey: getOrdersQueryKey,
 				});
 
-				const previous = queryClient.getQueryData(
-					trpc.orders.getOrders.queryKey(),
-				);
+				const previous = queryClient.getQueryData<Order[]>(getOrdersQueryKey);
 
 				queryClient.setQueryData(
-					trpc.orders.getOrders.queryKey(),
+					getOrdersQueryKey,
 					(old: Order[] | undefined) =>
 						(old ?? []).map((o) =>
 							o.id === variables.orderId ? { ...o, status: 'completed' } : o,
@@ -198,10 +270,7 @@ const OrdersRouteTable = () => {
 			},
 			onError: (error, _vars, context) => {
 				if (context?.previous) {
-					queryClient.setQueryData(
-						trpc.orders.getOrders.queryKey(),
-						context.previous,
-					);
+					queryClient.setQueryData(getOrdersQueryKey, context.previous);
 				}
 
 				toast.error(
@@ -216,6 +285,20 @@ const OrdersRouteTable = () => {
 			},
 		}),
 	);
+	const locale = getLocale();
+	const selectedExpectedDeliveryRange =
+		expectedDeliveryFrom || expectedDeliveryTo
+			? {
+					from: expectedDeliveryFrom ?? undefined,
+					to: expectedDeliveryTo ?? undefined,
+				}
+			: undefined;
+	const formatDate = (date: Date) =>
+		new Intl.DateTimeFormat(locale, {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric',
+		}).format(date);
 
 	const columns = useMemo(
 		() =>
@@ -251,48 +334,150 @@ const OrdersRouteTable = () => {
 
 	return (
 		<>
-			<div className="rounded-lg border border-border bg-card p-3 flex flex-col gap-3 sm:flex-row sm:items-center">
-				<Input
-					placeholder={m.ordersSearchPlaceholder()}
-					value={
-						(table.getColumn('customer')?.getFilterValue() as string) ?? ''
-					}
-					onChange={(event) =>
-						table.getColumn('customer')?.setFilterValue(event.target.value)
-					}
-					className="w-full sm:max-w-xs h-8 text-sm"
-				/>
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button
-								variant="outline"
-								size="sm"
-								className="h-8 gap-2 sm:ml-auto"
-							/>
+			<div className="rounded-lg border border-border bg-card p-3">
+				<div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+					<Input
+						placeholder={m.ordersSearchPlaceholder()}
+						value={
+							(table.getColumn('customer')?.getFilterValue() as string) ?? ''
 						}
-					>
-						<HugeiconsIcon icon={FilterHorizontalIcon} className="h-4 w-4" />
-						{m.ordersColumns()}
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" className="w-max">
-						<DropdownMenuGroup>
-							{table
-								.getAllColumns()
-								.filter((col) => col.getCanHide())
-								.map((col) => (
-									<DropdownMenuCheckboxItem
-										key={col.id}
-										className="capitalize"
-										checked={col.getIsVisible()}
-										onCheckedChange={(value) => col.toggleVisibility(!!value)}
+						onChange={(event) =>
+							table.getColumn('customer')?.setFilterValue(event.target.value)
+						}
+						className="w-full text-sm lg:max-w-xs"
+					/>
+					<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:ml-auto">
+						<Label className="cursor-pointer flex h-8 items-center gap-2 rounded-lg border border-border bg-background px-2 has-checked:border-primary has-checked:bg-primary/5 transition-colors">
+							<Switch
+								checked={lateOnly}
+								onCheckedChange={setLateOnly}
+								aria-label={m.orderLate()}
+							/>
+							<span className="text-sm text-foreground">{m.orderLate()}</span>
+						</Label>
+						<Select
+							value={statusFilter ?? 'all'}
+							onValueChange={(value) =>
+								setStatusFilter(value === 'all' ? null : (value as OrderStatus))
+							}
+							itemToStringLabel={(item) => {
+								switch (item) {
+									case 'all':
+										return m.orderStatus();
+									case 'pending':
+										return m.orderStatusPending();
+									case 'in_progress':
+										return m.orderStatusInProgress();
+									case 'completed':
+										return m.orderStatusCompleted();
+									default:
+										return item;
+								}
+							}}
+						>
+							<SelectTrigger className="w-full sm:w-45">
+								<SelectValue placeholder={m.orderStatus()} />
+							</SelectTrigger>
+							<SelectContent alignItemWithTrigger={false}>
+								<SelectGroup>
+									<SelectItem value="all">{m.orderStatus()}</SelectItem>
+									<SelectItem value="pending">
+										{m.orderStatusPending()}
+									</SelectItem>
+									<SelectItem value="in_progress">
+										{m.orderStatusInProgress()}
+									</SelectItem>
+									<SelectItem value="completed">
+										{m.orderStatusCompleted()}
+									</SelectItem>
+								</SelectGroup>
+							</SelectContent>
+						</Select>
+						<div className="flex items-center gap-1">
+							<Popover>
+								<PopoverTrigger
+									className="relative"
+									render={<div tabIndex={-1} />}
+									nativeButton={false}
+								>
+									<Button
+										type="button"
+										variant="outline"
+										className="w-full justify-start text-left font-normal sm:w-55"
 									>
-										{col.columnDef.meta?.name ?? col.id}
-									</DropdownMenuCheckboxItem>
-								))}
-						</DropdownMenuGroup>
-					</DropdownMenuContent>
-				</DropdownMenu>
+										{expectedDeliveryFrom ? (
+											expectedDeliveryTo ? (
+												`${formatDate(expectedDeliveryFrom)} - ${formatDate(expectedDeliveryTo)}`
+											) : (
+												`${formatDate(expectedDeliveryFrom)} -`
+											)
+										) : (
+											<span className="text-muted-foreground">
+												{m.orderExpectedDeliveryPlaceholder()}
+											</span>
+										)}
+									</Button>
+									<Button
+										size="icon"
+										className="absolute right-0 top-0"
+										variant="ghost"
+										onClick={(event) => {
+											event.stopPropagation();
+											setExpectedDeliveryRange(null, null);
+										}}
+										disabled={selectedExpectedDeliveryRange === undefined}
+									>
+										<HugeiconsIcon
+											icon={Trash}
+											className="size-4 text-destructive"
+										/>
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="w-auto p-0" align="start">
+									<Calendar
+										mode="range"
+										selected={selectedExpectedDeliveryRange}
+										defaultMonth={expectedDeliveryFrom ?? undefined}
+										locale={locale === 'es' ? es : enUS}
+										onSelect={(range) =>
+											setExpectedDeliveryRange(
+												range?.from ?? null,
+												range?.to ?? null,
+											)
+										}
+									/>
+								</PopoverContent>
+							</Popover>
+						</div>
+						<DropdownMenu>
+							<DropdownMenuTrigger
+								render={<Button variant="outline" className="gap-2" />}
+							>
+								<HugeiconsIcon icon={FilterHorizontalIcon} className="size-4" />
+								{m.ordersColumns()}
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end" className="w-max">
+								<DropdownMenuGroup>
+									{table
+										.getAllColumns()
+										.filter((col) => col.getCanHide())
+										.map((col) => (
+											<DropdownMenuCheckboxItem
+												key={col.id}
+												className="capitalize"
+												checked={col.getIsVisible()}
+												onCheckedChange={(value) =>
+													col.toggleVisibility(!!value)
+												}
+											>
+												{col.columnDef.meta?.name ?? col.id}
+											</DropdownMenuCheckboxItem>
+										))}
+								</DropdownMenuGroup>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				</div>
 			</div>
 
 			<div className="overflow-x-auto rounded-lg border border-border">
