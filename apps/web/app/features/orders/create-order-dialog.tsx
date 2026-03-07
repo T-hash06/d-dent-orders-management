@@ -45,6 +45,10 @@ import {
 	createOrderFormSchema,
 	useAppForm,
 } from '@/features/orders/create-order.form';
+import {
+	getOrderProductDisplayLabel,
+	getOrderProductSearchLabel,
+} from '@/features/orders/order-product-label';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 export function CreateOrderDialog() {
@@ -103,11 +107,6 @@ export function CreateOrderDialog() {
 	);
 
 	const isLoading = createMutation.isPending;
-	const getProductSearchLabel = (product: (typeof products)[number]) =>
-		[product.name, product.type, product.variant]
-			.map((value) => (value ?? '').trim())
-			.filter(Boolean)
-			.join(' ');
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
@@ -450,11 +449,13 @@ export function CreateOrderDialog() {
 																			disabled={isLoading}
 																			items={products}
 																			filter={(item, query) =>
-																				getProductSearchLabel(item)
+																				getOrderProductSearchLabel(item)
 																					.toLowerCase()
 																					.includes(query.trim().toLowerCase())
 																			}
-																			itemToStringLabel={(item) => item.name}
+																			itemToStringLabel={(item) =>
+																				getOrderProductDisplayLabel(item)
+																			}
 																		>
 																			<ComboboxInput
 																				id={field.name}
@@ -473,7 +474,9 @@ export function CreateOrderDialog() {
 																							key={item.id}
 																							value={item}
 																						>
-																							{item.name}
+																							{getOrderProductDisplayLabel(
+																								item,
+																							)}
 																						</ComboboxItem>
 																					)}
 																				</ComboboxList>

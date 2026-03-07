@@ -4,3 +4,6 @@ import type { AppRouter } from '@/features/.server/trpc/trpc.router';
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 export type ProductPreview = RouterOutputs['products']['getProducts'][number];
+export type Product = RouterOutputs['products']['getProductById'];
+export type ProductCategory =
+	RouterOutputs['products']['getProductCategories'][number];

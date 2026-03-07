@@ -15,14 +15,24 @@ import {
 	Spinner,
 	toast,
 } from '@full-stack-template/ui';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { type SubmitEvent, useCallback, useEffect } from 'react';
-import type { ProductPreview } from '@/features/.server/products/product.types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type SubmitEvent, useCallback, useEffect, useMemo } from 'react';
+import type {
+	ProductCategory,
+	ProductPreview,
+} from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
+import { CategoryComboboxField } from '@/features/products/category-combobox-field';
 import {
 	editProductFormOptions,
 	useAppForm,
 } from '@/features/products/edit-product.form';
+import {
+	getNewCategoryName,
+	getProductCategoryId,
+	getProductCategoryLabel,
+	isNewCategory,
+} from '@/features/products/product-category';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 type EditProductDialogProps = {
@@ -31,6 +41,8 @@ type EditProductDialogProps = {
 	onOpenChange: (open: boolean) => void;
 };
 
+const emptyProductCategoriesFallback: ProductCategory[] = [];
+
 export function EditProductDialog({
 	product,
 	open,
@@ -38,6 +50,13 @@ export function EditProductDialog({
 }: EditProductDialogProps) {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
+	const { data: productCategories = emptyProductCategoriesFallback } = useQuery(
+		trpc.products.getProductCategories.queryOptions(),
+	);
+	const selectedCategoryId = useMemo(
+		() => (product ? getProductCategoryId(product, productCategories) : ''),
+		[product, productCategories],
+	);
 
 	const updateMutation = useMutation(
 		trpc.products.updateProduct.mutationOptions({
@@ -53,11 +72,30 @@ export function EditProductDialog({
 				queryClient.setQueryData(
 					trpc.products.getProducts.queryKey(),
 					(old: ProductPreview[] | undefined) =>
-						(old ?? []).map((p) =>
-							p.id === variables.id
-								? { ...p, ...variables, updatedAt: new Date() }
-								: p,
-						),
+						(old ?? []).map((p) => {
+							if (p.id !== variables.id) {
+								return p;
+							}
+
+							const categoryName = isNewCategory(variables.categoryId)
+								? getNewCategoryName(variables.categoryId)
+								: (productCategories.find(
+										(category) => category.id === variables.categoryId,
+									)?.name ?? getProductCategoryLabel(p));
+
+							return {
+								...p,
+								name: variables.name,
+								categoryId: variables.categoryId,
+								category: {
+									id: variables.categoryId,
+									name: categoryName,
+								},
+								variant: variables.variant,
+								price: variables.price,
+								updatedAt: new Date(),
+							};
+						}),
 				);
 
 				return { previous };
@@ -76,6 +114,9 @@ export function EditProductDialog({
 				queryClient.invalidateQueries({
 					queryKey: trpc.products.getProducts.queryKey(),
 				});
+				queryClient.invalidateQueries({
+					queryKey: trpc.products.getProductCategories.queryKey(),
+				});
 				onOpenChange(false);
 			},
 		}),
@@ -84,16 +125,22 @@ export function EditProductDialog({
 	const form = useAppForm({
 		...editProductFormOptions({
 			name: product?.name ?? '',
-			type: product?.type ?? '',
+			categoryId: selectedCategoryId,
 			variant: product?.variant ?? '',
 			price: product?.price ?? 0,
 		}),
 		onSubmit: async ({ value }) => {
 			if (!product) return;
+			const categoryId = value.categoryId.trim();
+			if (!categoryId) {
+				toast.error(m.createProductCategoryRequired());
+				return;
+			}
+
 			updateMutation.mutate({
 				id: product.id,
 				name: value.name,
-				type: value.type,
+				categoryId,
 				variant: value.variant,
 				price: Number(value.price),
 			});
@@ -105,12 +152,12 @@ export function EditProductDialog({
 		if (product) {
 			form.reset({
 				name: product.name,
-				type: product.type,
+				categoryId: selectedCategoryId,
 				variant: product.variant,
 				price: String(product.price),
 			});
 		}
-	}, [product, form]);
+	}, [product, selectedCategoryId, form]);
 
 	const handleSubmit = useCallback(
 		async (event: SubmitEvent) => {
@@ -131,6 +178,30 @@ export function EditProductDialog({
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
+					<form.Field name="categoryId">
+						{(field) => {
+							const isInvalid =
+								field.state.meta.isTouched && !field.state.meta.isValid;
+							return (
+								<Field data-invalid={isInvalid}>
+									<FieldLabel htmlFor={field.name}>
+										{m.productCategory()}
+									</FieldLabel>
+									<CategoryComboboxField
+										id={field.name}
+										value={field.state.value}
+										onChange={(value) => field.handleChange(value)}
+										onBlur={() => field.handleBlur()}
+										categories={productCategories}
+										disabled={isLoading}
+										isInvalid={isInvalid}
+									/>
+									<FieldError errors={field.state.meta.errors} />
+								</Field>
+							);
+						}}
+					</form.Field>
+
 					<FieldGroup>
 						<form.Field name="name">
 							{(field) => {
@@ -151,31 +222,6 @@ export function EditProductDialog({
 											onBlur={() => field.handleBlur()}
 											disabled={isLoading}
 											autoFocus
-										/>
-										<FieldError errors={field.state.meta.errors} />
-									</Field>
-								);
-							}}
-						</form.Field>
-
-						<form.Field name="type">
-							{(field) => {
-								const isInvalid =
-									field.state.meta.isTouched && !field.state.meta.isValid;
-								return (
-									<Field data-invalid={isInvalid}>
-										<FieldLabel htmlFor={field.name}>
-											{m.productType()}
-										</FieldLabel>
-										<Input
-											id={field.name}
-											name={field.name}
-											placeholder={m.productTypePlaceholder()}
-											aria-invalid={isInvalid}
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={() => field.handleBlur()}
-											disabled={isLoading}
 										/>
 										<FieldError errors={field.state.meta.errors} />
 									</Field>

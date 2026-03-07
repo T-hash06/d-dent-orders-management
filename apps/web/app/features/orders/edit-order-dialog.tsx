@@ -45,6 +45,10 @@ import {
 	editOrderFormSchema,
 	useAppForm,
 } from '@/features/orders/edit-order.form';
+import {
+	getOrderProductDisplayLabel,
+	getOrderProductSearchLabel,
+} from '@/features/orders/order-product-label';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 type EditOrderDialogProps = {
@@ -52,16 +56,6 @@ type EditOrderDialogProps = {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };
-
-const getProductSearchLabel = (product: {
-	name?: string | null;
-	type?: string | null;
-	variant?: string | null;
-}) =>
-	[product.name, product.type, product.variant]
-		.map((value) => value?.trim() ?? '')
-		.filter(Boolean)
-		.join(' ');
 
 export function EditOrderDialog({
 	order,
@@ -484,13 +478,13 @@ export function EditOrderDialog({
 																			disabled={isLoading}
 																			items={products}
 																			filter={(item, query) =>
-																				getProductSearchLabel(item)
-																					.toLocaleLowerCase()
-																					.includes(
-																						query.trim().toLocaleLowerCase(),
-																					)
+																				getOrderProductSearchLabel(item)
+																					.toLowerCase()
+																					.includes(query.trim().toLowerCase())
 																			}
-																			itemToStringLabel={(item) => item.name}
+																			itemToStringLabel={(item) =>
+																				getOrderProductDisplayLabel(item)
+																			}
 																		>
 																			<ComboboxInput
 																				id={field.name}
@@ -509,7 +503,9 @@ export function EditOrderDialog({
 																							key={item.id}
 																							value={item}
 																						>
-																							{item.name}
+																							{getOrderProductDisplayLabel(
+																								item,
+																							)}
 																						</ComboboxItem>
 																					)}
 																				</ComboboxList>

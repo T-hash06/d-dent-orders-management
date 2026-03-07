@@ -18,20 +18,33 @@ import {
 } from '@full-stack-template/ui';
 import { Plus } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type SubmitEvent, useCallback, useState } from 'react';
-import type { ProductPreview } from '@/features/.server/products/product.types';
+import type {
+	ProductCategory,
+	ProductPreview,
+} from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
+import { CategoryComboboxField } from '@/features/products/category-combobox-field';
 import {
 	CREATE_PRODUCT_FORM_OPTIONS,
 	useAppForm,
 } from '@/features/products/create-product.form';
+import {
+	getNewCategoryName,
+	isNewCategory,
+} from '@/features/products/product-category';
 import { useTRPC } from '@/features/trpc/trpc.context';
+
+const emptyProductCategoriesFallback: ProductCategory[] = [];
 
 export function CreateProductDialog() {
 	const [open, setOpen] = useState(false);
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
+	const { data: productCategories = emptyProductCategoriesFallback } = useQuery(
+		trpc.products.getProductCategories.queryOptions(),
+	);
 
 	const createMutation = useMutation(
 		trpc.products.createProduct.mutationOptions({
@@ -46,21 +59,33 @@ export function CreateProductDialog() {
 
 				queryClient.setQueryData(
 					trpc.products.getProducts.queryKey(),
-					(old: ProductPreview[] | undefined) => [
-						...(old ?? []),
-						{
-							id: `temp-${Date.now()}`,
-							hasPendingOrders: true,
-							name: variables.name,
-							type: variables.type,
-							variant: variables.variant,
-							price: variables.price,
-							createdAt: new Date(),
-							updatedAt: new Date(),
-							createdById: 'temp',
-							updatedById: 'temp',
-						} satisfies ProductPreview,
-					],
+					(old: ProductPreview[] | undefined) => {
+						const categoryName = isNewCategory(variables.categoryId)
+							? getNewCategoryName(variables.categoryId)
+							: (productCategories.find(
+									(category) => category.id === variables.categoryId,
+								)?.name ?? '');
+
+						return [
+							...(old ?? []),
+							{
+								id: `temp-${Date.now()}`,
+								hasPendingOrders: true,
+								name: variables.name,
+								categoryId: variables.categoryId,
+								category: {
+									id: variables.categoryId,
+									name: categoryName,
+								},
+								variant: variables.variant,
+								price: variables.price,
+								createdAt: new Date(),
+								updatedAt: new Date(),
+								createdById: 'temp',
+								updatedById: 'temp',
+							} satisfies ProductPreview,
+						];
+					},
 				);
 
 				return { previous };
@@ -79,6 +104,9 @@ export function CreateProductDialog() {
 				queryClient.invalidateQueries({
 					queryKey: trpc.products.getProducts.queryKey(),
 				});
+				queryClient.invalidateQueries({
+					queryKey: trpc.products.getProductCategories.queryKey(),
+				});
 				form.reset();
 				setOpen(false);
 			},
@@ -88,9 +116,15 @@ export function CreateProductDialog() {
 	const form = useAppForm({
 		...CREATE_PRODUCT_FORM_OPTIONS,
 		onSubmit: async ({ value }) => {
+			const categoryId = value.categoryId.trim();
+			if (!categoryId) {
+				toast.error(m.createProductCategoryRequired());
+				return;
+			}
+
 			createMutation.mutate({
 				name: value.name,
-				type: value.type,
+				categoryId,
 				variant: value.variant,
 				price: Number(value.price),
 			});
@@ -127,6 +161,30 @@ export function CreateProductDialog() {
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<FieldGroup>
+						<form.Field name="categoryId">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>
+											{m.productCategory()}
+										</FieldLabel>
+										<CategoryComboboxField
+											id={field.name}
+											value={field.state.value}
+											onChange={(value) => field.handleChange(value)}
+											onBlur={() => field.handleBlur()}
+											categories={productCategories}
+											disabled={isLoading}
+											isInvalid={isInvalid}
+										/>
+										<FieldError errors={field.state.meta.errors} />
+									</Field>
+								);
+							}}
+						</form.Field>
+
 						<form.Field name="name">
 							{(field) => {
 								const isInvalid =
@@ -146,31 +204,6 @@ export function CreateProductDialog() {
 											onBlur={() => field.handleBlur()}
 											disabled={isLoading}
 											autoFocus
-										/>
-										<FieldError errors={field.state.meta.errors} />
-									</Field>
-								);
-							}}
-						</form.Field>
-
-						<form.Field name="type">
-							{(field) => {
-								const isInvalid =
-									field.state.meta.isTouched && !field.state.meta.isValid;
-								return (
-									<Field data-invalid={isInvalid}>
-										<FieldLabel htmlFor={field.name}>
-											{m.productType()}
-										</FieldLabel>
-										<Input
-											id={field.name}
-											name={field.name}
-											placeholder={m.productTypePlaceholder()}
-											aria-invalid={isInvalid}
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={() => field.handleBlur()}
-											disabled={isLoading}
 										/>
 										<FieldError errors={field.state.meta.errors} />
 									</Field>

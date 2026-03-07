@@ -10,7 +10,7 @@ export const { fieldContext, formContext } = createFormHookContexts();
 
 const createProductFormState = z.object({
 	name: z.string(),
-	type: z.string(),
+	categoryId: z.string(),
 	variant: z.string(),
 	price: z.string(),
 });
@@ -19,8 +19,8 @@ const createProductFormSchema = z.object({
 	name: z.string().min(1, {
 		error: m.createProductNameRequired(),
 	}),
-	type: z.string().min(1, {
-		error: m.createProductTypeRequired(),
+	categoryId: z.string().min(1, {
+		error: m.createProductCategoryRequired(),
 	}),
 	variant: z.string().min(1, {
 		error: m.createProductVariantRequired(),
@@ -30,7 +30,7 @@ const createProductFormSchema = z.object({
 	}),
 }) satisfies z.ZodType<{
 	name: string;
-	type: string;
+	categoryId: string;
 	variant: string;
 	price: number;
 }>;
@@ -41,13 +41,13 @@ export const createProductFormCodec = z.codec(
 	{
 		decode: (value) => ({
 			name: value.name.trim(),
-			type: value.type.trim(),
+			categoryId: value.categoryId.trim(),
 			variant: value.variant.trim(),
 			price: value.price,
 		}),
 		encode: (value) => ({
 			name: value.name,
-			type: value.type,
+			categoryId: value.categoryId,
 			variant: value.variant,
 			price: String(value.price),
 		}),
@@ -58,7 +58,7 @@ const DEFAULT_CREATE_PRODUCT_FORM_VALUES: z.infer<
 	typeof createProductFormState
 > = {
 	name: '',
-	type: '',
+	categoryId: '',
 	variant: '',
 	price: '',
 };

@@ -7,6 +7,12 @@ import {
 	DropdownMenuTrigger,
 	Empty,
 	Input,
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Skeleton,
 	Table,
 	TableBody,
@@ -39,7 +45,10 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { PageHeader } from '@/components/layout/page-header';
 import { StatBar } from '@/components/ui/stat-bar';
-import type { ProductPreview } from '@/features/.server/products/product.types';
+import type {
+	ProductCategory,
+	ProductPreview,
+} from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import { CreateProductDialog } from '@/features/products/create-product-dialog';
 import { DeleteProductDialog } from '@/features/products/delete-product-dialog';
@@ -52,6 +61,8 @@ interface ProductStoreState {
 	columnFilters: ColumnFiltersState;
 	columnVisibility: VisibilityState;
 	rowSelection: Record<string, boolean>;
+	searchTerm: string;
+	categoryIdFilter: string | null;
 	editProduct: ProductPreview | null;
 	deleteProduct: ProductPreview | null;
 }
@@ -61,6 +72,8 @@ interface ProductStoreActions {
 	setColumnFilters: OnChangeFn<ColumnFiltersState>;
 	setColumnVisibility: OnChangeFn<VisibilityState>;
 	setRowSelection: OnChangeFn<Record<string, boolean>>;
+	setSearchTerm: (searchTerm: string) => void;
+	setCategoryIdFilter: (categoryIdFilter: string | null) => void;
 	setEditProduct: (product: ProductPreview | null) => void;
 	setDeleteProduct: (product: ProductPreview | null) => void;
 }
@@ -71,6 +84,8 @@ const useProductStore = create<ProductStoreState & ProductStoreActions>(
 		columnFilters: [],
 		columnVisibility: {},
 		rowSelection: {},
+		searchTerm: '',
+		categoryIdFilter: null,
 		editProduct: null,
 		deleteProduct: null,
 		setSorting: (updater) => {
@@ -105,12 +120,15 @@ const useProductStore = create<ProductStoreState & ProductStoreActions>(
 				return { rowSelection: newRowSelection };
 			});
 		},
+		setSearchTerm: (searchTerm) => set({ searchTerm }),
+		setCategoryIdFilter: (categoryIdFilter) => set({ categoryIdFilter }),
 		setEditProduct: (editProduct) => set({ editProduct }),
 		setDeleteProduct: (deleteProduct) => set({ deleteProduct }),
 	}),
 );
 
 const emptyProductsFallback: ProductPreview[] = [];
+const emptyProductCategoriesFallback: ProductCategory[] = [];
 
 const ProductsRouteHeader = () => (
 	<PageHeader
@@ -154,8 +172,8 @@ const ProductsRouteStats = () => {
 
 const ProductsRouteTable = () => {
 	const trpc = useTRPC();
-	const { data: products = emptyProductsFallback, isLoading } = useQuery(
-		trpc.products.getProducts.queryOptions(),
+	const { data: productCategories = emptyProductCategoriesFallback } = useQuery(
+		trpc.products.getProductCategories.queryOptions(),
 	);
 
 	const [
@@ -163,10 +181,14 @@ const ProductsRouteTable = () => {
 		columnFilters,
 		columnVisibility,
 		rowSelection,
+		searchTerm,
+		categoryIdFilter,
 		setSorting,
 		setColumnFilters,
 		setColumnVisibility,
 		setRowSelection,
+		setSearchTerm,
+		setCategoryIdFilter,
 		setEditProduct,
 		setDeleteProduct,
 	] = useProductStore(
@@ -175,13 +197,32 @@ const ProductsRouteTable = () => {
 			store.columnFilters,
 			store.columnVisibility,
 			store.rowSelection,
+			store.searchTerm,
+			store.categoryIdFilter,
 			store.setSorting,
 			store.setColumnFilters,
 			store.setColumnVisibility,
 			store.setRowSelection,
+			store.setSearchTerm,
+			store.setCategoryIdFilter,
 			store.setEditProduct,
 			store.setDeleteProduct,
 		]),
+	);
+
+	const getProductsQueryInput = useMemo(() => {
+		const normalizedSearchTerm = searchTerm.trim();
+		if (!normalizedSearchTerm && categoryIdFilter === null) {
+			return undefined;
+		}
+
+		return {
+			search: normalizedSearchTerm || undefined,
+			categoryId: categoryIdFilter ?? undefined,
+		};
+	}, [searchTerm, categoryIdFilter]);
+	const { data: products = emptyProductsFallback, isLoading } = useQuery(
+		trpc.products.getProducts.queryOptions(getProductsQueryInput),
 	);
 
 	const columns = useMemo(
@@ -218,12 +259,36 @@ const ProductsRouteTable = () => {
 			<div className="rounded-lg border border-border bg-card p-3 flex flex-col gap-3 sm:flex-row sm:items-center">
 				<Input
 					placeholder={m.productsSearchPlaceholder()}
-					value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
-					onChange={(event) =>
-						table.getColumn('name')?.setFilterValue(event.target.value)
-					}
+					value={searchTerm}
+					onChange={(event) => setSearchTerm(event.target.value)}
 					className="w-full sm:max-w-xs h-8 text-sm"
 				/>
+				<Select
+					value={categoryIdFilter ?? 'all'}
+					onValueChange={(value) =>
+						setCategoryIdFilter(value === 'all' ? null : value)
+					}
+					itemToStringLabel={(item) =>
+						item === 'all'
+							? m.productCategory()
+							: (productCategories.find((category) => category.id === item)
+									?.name ?? item)
+					}
+				>
+					<SelectTrigger className="w-full h-8 text-sm sm:w-48">
+						<SelectValue placeholder={m.productCategory()} />
+					</SelectTrigger>
+					<SelectContent alignItemWithTrigger={false}>
+						<SelectGroup>
+							<SelectItem value="all">{m.productCategory()}</SelectItem>
+							{productCategories.map((category) => (
+								<SelectItem key={category.id} value={category.id}>
+									{category.name}
+								</SelectItem>
+							))}
+						</SelectGroup>
+					</SelectContent>
+				</Select>
 				<DropdownMenu>
 					<DropdownMenuTrigger
 						render={

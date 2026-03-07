@@ -397,7 +397,7 @@ const OrdersRouteTable = () => {
 							<Popover>
 								<PopoverTrigger
 									className="relative"
-									render={<div tabIndex={-1} />}
+									render={<div tabIndex={-1} className="w-full" />}
 									nativeButton={false}
 								>
 									<Button

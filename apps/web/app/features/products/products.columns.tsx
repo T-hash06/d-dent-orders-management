@@ -21,6 +21,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ProductPreview } from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
+import { getProductCategoryLabel } from '@/features/products/product-category';
 
 type ProductColumnsProps = {
 	onEdit: (product: ProductPreview) => void;
@@ -85,15 +86,16 @@ export function getProductColumns({
 			},
 		},
 		{
-			accessorKey: 'type',
-			header: () => m.productType(),
+			id: 'productCategory',
+			accessorFn: (product) => getProductCategoryLabel(product),
+			header: () => m.productCategory(),
 			cell: ({ row }) => (
 				<Badge variant="secondary" className="font-normal text-xs">
-					{row.getValue('type')}
+					{row.getValue('productCategory')}
 				</Badge>
 			),
 			meta: {
-				name: m.productType(),
+				name: m.productCategory(),
 			},
 		},
 		{

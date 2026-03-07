@@ -1,7 +1,7 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "db0fbd29-4b0a-4ff2-9b9d-38c65777cf1c",
+	"id": "8b87a0c7-9cfb-412d-be98-25c311759575",
 	"prevId": "00000000-0000-0000-0000-000000000000",
 	"tables": {
 		"accounts": {
@@ -575,6 +575,14 @@
 					"notNull": true,
 					"autoincrement": false
 				},
+				"status": {
+					"name": "status",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "'pending'"
+				},
 				"delivery_address": {
 					"name": "delivery_address",
 					"type": "text",
@@ -656,8 +664,8 @@
 			"uniqueConstraints": {},
 			"checkConstraints": {}
 		},
-		"products": {
-			"name": "products",
+		"product_categories": {
+			"name": "product_categories",
 			"columns": {
 				"id": {
 					"name": "id",
@@ -673,8 +681,81 @@
 					"notNull": true,
 					"autoincrement": false
 				},
-				"type": {
-					"name": "type",
+				"created_at": {
+					"name": "created_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+				},
+				"created_by_id": {
+					"name": "created_by_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"updated_by_id": {
+					"name": "updated_by_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"product_categories_created_by_id_users_id_fk": {
+					"name": "product_categories_created_by_id_users_id_fk",
+					"tableFrom": "product_categories",
+					"tableTo": "users",
+					"columnsFrom": ["created_by_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				},
+				"product_categories_updated_by_id_users_id_fk": {
+					"name": "product_categories_updated_by_id_users_id_fk",
+					"tableFrom": "product_categories",
+					"tableTo": "users",
+					"columnsFrom": ["updated_by_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"products": {
+			"name": "products",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"category_id": {
+					"name": "category_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"name": {
+					"name": "name",
 					"type": "text",
 					"primaryKey": false,
 					"notNull": true,
@@ -727,6 +808,15 @@
 			},
 			"indexes": {},
 			"foreignKeys": {
+				"products_category_id_product_categories_id_fk": {
+					"name": "products_category_id_product_categories_id_fk",
+					"tableFrom": "products",
+					"tableTo": "product_categories",
+					"columnsFrom": ["category_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				},
 				"products_created_by_id_users_id_fk": {
 					"name": "products_created_by_id_users_id_fk",
 					"tableFrom": "products",

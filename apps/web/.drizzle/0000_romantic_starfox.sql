@@ -86,6 +86,7 @@ CREATE TABLE `orders` (
 	`customer_id` text NOT NULL,
 	`assigned_to_user_id` text,
 	`expected_delivery_at` integer NOT NULL,
+	`status` text DEFAULT 'pending' NOT NULL,
 	`delivery_address` text NOT NULL,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
 	`updated_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
@@ -97,16 +98,28 @@ CREATE TABLE `orders` (
 	FOREIGN KEY (`updated_by_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `products` (
+CREATE TABLE `product_categories` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
-	`type` text NOT NULL,
+	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	`updated_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	`created_by_id` text NOT NULL,
+	`updated_by_id` text NOT NULL,
+	FOREIGN KEY (`created_by_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`updated_by_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE TABLE `products` (
+	`id` text PRIMARY KEY NOT NULL,
+	`category_id` text NOT NULL,
+	`name` text NOT NULL,
 	`variant` text NOT NULL,
 	`price` real NOT NULL,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
 	`updated_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
 	`created_by_id` text NOT NULL,
 	`updated_by_id` text NOT NULL,
+	FOREIGN KEY (`category_id`) REFERENCES `product_categories`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`created_by_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`updated_by_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );

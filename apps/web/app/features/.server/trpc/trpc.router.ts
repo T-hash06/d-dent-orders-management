@@ -14,6 +14,7 @@ import { updateOrder } from '@/features/.server/orders/update-order.mutation';
 import { createProduct } from '@/features/.server/products/create-product.mutation';
 import { deleteProduct } from '@/features/.server/products/delete-product.mutation';
 import { getProductById } from '@/features/.server/products/get-product-by-id.query';
+import { getProductCategories } from '@/features/.server/products/get-product-categories.query';
 import { getProducts } from '@/features/.server/products/get-products.query';
 import { updateProduct } from '@/features/.server/products/update-product.mutation';
 import { t } from '@/features/.server/trpc/trpc.init';
@@ -29,6 +30,7 @@ const customers = t.router({
 
 const products = t.router({
 	getProducts,
+	getProductCategories,
 	getProductById,
 	createProduct,
 	updateProduct,
