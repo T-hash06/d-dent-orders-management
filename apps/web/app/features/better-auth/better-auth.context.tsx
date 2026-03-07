@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { Session } from '@/features/.server/auth/better-auth.lib';
+import type { Session } from '@/features/.server/auth/better-auth-server.lib';
 
 const SessionContext = createContext<Session | undefined>(undefined);
 

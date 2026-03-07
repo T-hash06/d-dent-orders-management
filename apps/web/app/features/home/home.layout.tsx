@@ -42,9 +42,12 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from 'next-themes';
 import { Link, Outlet, redirect, useLocation } from 'react-router';
-import { auth, type Session } from '@/features/.server/auth/better-auth.lib';
-import { SessionProvider } from '@/features/auth/auth.context';
-import { signOut } from '@/features/auth/auth.lib';
+import {
+	auth,
+	type Session,
+} from '@/features/.server/auth/better-auth-server.lib';
+import { SessionProvider } from '@/features/better-auth/better-auth.context';
+import { signOut } from '@/features/better-auth/better-auth-client.lib';
 import { m } from '@/features/i18n/paraglide/messages';
 import {
 	getLocale,

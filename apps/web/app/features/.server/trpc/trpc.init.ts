@@ -3,7 +3,7 @@ import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import SuperJSON from 'superjson';
 import * as z from 'zod';
 import { ZodError } from 'zod';
-import { auth } from '@/features/.server/auth/better-auth.lib';
+import { auth } from '@/features/.server/auth/better-auth-server.lib';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
 import { m } from '@/features/i18n/paraglide/messages';
 

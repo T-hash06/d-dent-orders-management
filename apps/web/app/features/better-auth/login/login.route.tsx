@@ -31,11 +31,11 @@ import {
 	isValidBetterAuthErrorCode,
 	signIn,
 	useClientSession,
-} from '@/features/auth/auth.lib';
+} from '@/features/better-auth/better-auth-client.lib';
 import {
 	LOGIN_FORM_OPTIONS,
 	useAppForm,
-} from '@/features/auth/login/login.form';
+} from '@/features/better-auth/login/login.form';
 import { m } from '@/features/i18n/paraglide/messages';
 import {
 	getLocale,

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { relations, sql } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { users } from '@/features/.server/auth/auth.schema';
+import { users } from '@/features/.server/auth/better-auth.schema';
 
 export const customers = sqliteTable('customers', {
 	id: text('id')

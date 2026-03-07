@@ -337,5 +337,10 @@
 	"orderNotOwnedByUser": "You do not have permission to complete this order.",
 	"completeOrder": "Complete order",
 	"completeOrderFailed": "Failed to complete order. Please try again.",
-	"completeOrderSuccess": "Order marked as completed!"
+	"completeOrderSuccess": "Order marked as completed!",
+	"bodyMustBeAnObject": "Request body must be an object.",
+	"invalidUser": "Invalid user.",
+	"methodNotAllowedDeferSessionRequired": "Method not allowed. Deferred session required.",
+	"passwordAlreadySet": "Password already set.",
+	"tokenExpired": "Token expired. Please sign in again."
 }

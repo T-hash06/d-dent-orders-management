@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { relations, sql } from 'drizzle-orm';
 import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { users } from '@/features/.server/auth/auth.schema';
+import { users } from '@/features/.server/auth/better-auth.schema';
 import { customers } from '@/features/.server/customers/customer.schema';
 import { products } from '@/features/.server/products/product.schema';
 import { ORDER_STATUS_VALUES } from '@/features/orders/order-status';

@@ -56,6 +56,12 @@ export const errorCodes = {
 	USER_EMAIL_NOT_FOUND: 'userEmailNotFound',
 	VALIDATION_ERROR: 'validationError',
 	VERIFICATION_EMAIL_NOT_ENABLED: 'verificationEmailNotEnabled',
+	BODY_MUST_BE_AN_OBJECT: 'bodyMustBeAnObject',
+	INVALID_USER: 'invalidUser',
+	METHOD_NOT_ALLOWED_DEFER_SESSION_REQUIRED:
+		'methodNotAllowedDeferSessionRequired',
+	PASSWORD_ALREADY_SET: 'passwordAlreadySet',
+	TOKEN_EXPIRED: 'tokenExpired',
 } as const satisfies ErrorTypes;
 
 export function isValidBetterAuthErrorCode(

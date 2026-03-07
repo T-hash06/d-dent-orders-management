@@ -21,7 +21,7 @@ import {
 import { HugeiconsIcon } from '@hugeicons/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { Order } from '@/features/.server/orders/order.types';
-import { useSession } from '@/features/auth/auth.context';
+import { useSession } from '@/features/better-auth/better-auth.context';
 import { m } from '@/features/i18n/paraglide/messages';
 import { getLocale } from '@/features/i18n/paraglide/runtime';
 

@@ -36,11 +36,11 @@ import {
 	isValidBetterAuthErrorCode,
 	signUp,
 	useClientSession,
-} from '@/features/auth/auth.lib';
+} from '@/features/better-auth/better-auth-client.lib';
 import {
 	REGISTER_FORM_OPTIONS,
 	useAppForm,
-} from '@/features/auth/register/register.form';
+} from '@/features/better-auth/register/register.form';
 import { m } from '@/features/i18n/paraglide/messages';
 import { localizeHref } from '@/features/i18n/paraglide/runtime';
 

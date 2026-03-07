@@ -337,5 +337,10 @@
 	"orderNotOwnedByUser": "No tienes permiso para completar este pedido.",
 	"completeOrder": "Completar pedido",
 	"completeOrderFailed": "Falló al completar el pedido. Por favor intenta de nuevo.",
-	"completeOrderSuccess": "¡Pedido marcado como completado!"
+	"completeOrderSuccess": "¡Pedido marcado como completado!",
+	"bodyMustBeAnObject": "El cuerpo de la solicitud debe ser un objeto.",
+	"invalidUser": "Usuario inválido.",
+	"methodNotAllowedDeferSessionRequired": "Método no permitido. Se requiere sesión diferida.",
+	"passwordAlreadySet": "Contraseña ya establecida.",
+	"tokenExpired": "Token expirado. Por favor inicia sesión nuevamente."
 }

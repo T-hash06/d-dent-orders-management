@@ -1,4 +1,4 @@
-import { users } from '@/features/.server/auth/auth.schema';
+import { users } from '@/features/.server/auth/better-auth.schema';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import { procedures } from '@/features/.server/trpc/trpc.init';
 

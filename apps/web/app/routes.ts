@@ -15,8 +15,8 @@ export default [
 			route('orders', 'features/orders/orders.route.tsx'),
 		]),
 		route('api/trpc/*', 'features/trpc/trpc.handler.ts'),
-		route('api/auth/*', 'features/auth/auth.handler.ts'),
-		route('auth/login', 'features/auth/login/login.route.tsx'),
-		route('auth/register', 'features/auth/register/register.route.tsx'),
+		route('api/auth/*', 'features/better-auth/better-auth.handler.ts'),
+		route('auth/login', 'features/better-auth/login/login.route.tsx'),
+		route('auth/register', 'features/better-auth/register/register.route.tsx'),
 	]),
 ] satisfies RouteConfig;

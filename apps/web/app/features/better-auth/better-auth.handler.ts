@@ -1,5 +1,5 @@
-import { auth } from '@/features/.server/auth/better-auth.lib';
-import type { Route } from './+types/auth.handler';
+import { auth } from '@/features/.server/auth/better-auth-server.lib';
+import type { Route } from './+types/better-auth.handler';
 
 const handleRequest = (args: Route.LoaderArgs | Route.ActionArgs) => {
 	return auth.handler(args.request);
