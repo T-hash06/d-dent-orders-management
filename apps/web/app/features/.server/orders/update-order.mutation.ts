@@ -2,8 +2,8 @@ import { eq } from 'drizzle-orm';
 import * as z from 'zod';
 import {
 	assertHasAnyPermission,
+	buildOrderActions,
 	forbiddenError,
-	hasPermission,
 } from '@/features/.server/auth/authorization.lib';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import { orderItems, orders } from '@/features/.server/orders/order.schema';
@@ -95,18 +95,6 @@ export const updateOrder = procedures.auth
 			{ orders: ['update-all'] },
 			{ orders: ['update-assigned'] },
 		]);
-		const canUpdateAnyOrder = hasPermission(ctx.permissions, {
-			orders: ['update-all'],
-		});
-		const canUpdateAssignedOrder = hasPermission(ctx.permissions, {
-			orders: ['update-assigned'],
-		});
-		const canAssignAnyOrder = hasPermission(ctx.permissions, {
-			orders: ['assign-all'],
-		});
-		const canAssignAssignedOrder = hasPermission(ctx.permissions, {
-			orders: ['assign-assigned'],
-		});
 
 		return db.transaction(async (tx) => {
 			const [currentOrder] = await tx
@@ -118,17 +106,15 @@ export const updateOrder = procedures.auth
 				return null;
 			}
 
-			const isReassigning =
-				input.assignedToUserId !== currentOrder.assignedToUserId;
-			if (isReassigning) {
-				const canAssignCurrentOrder =
-					canAssignAnyOrder ||
-					(canAssignAssignedOrder &&
-						currentOrder.assignedToUserId === ctx.user.id);
-				if (!canAssignCurrentOrder) {
-					throw forbiddenError();
-				}
+			const orderActions = buildOrderActions({
+				permissions: ctx.permissions,
+				userId: ctx.user.id,
+				assignedToUserId: currentOrder.assignedToUserId,
+			});
+			if (!orderActions.canEdit) {
+				throw forbiddenError();
 			}
+			const { editableFields } = orderActions;
 
 			const currentItems = await tx
 				.select({
@@ -139,32 +125,62 @@ export const updateOrder = procedures.auth
 				.from(orderItems)
 				.where(eq(orderItems.orderId, input.id));
 
-			if (!canUpdateAnyOrder) {
-				if (
-					!canUpdateAssignedOrder ||
-					currentOrder.assignedToUserId !== ctx.user.id
-				) {
-					throw forbiddenError();
-				}
+			const isChangingCustomerId = input.customerId !== currentOrder.customerId;
+			if (isChangingCustomerId && !editableFields.canEditCustomerId) {
+				throw forbiddenError();
+			}
+			const isChangingAssignedToUserId =
+				input.assignedToUserId !== currentOrder.assignedToUserId;
+			if (
+				isChangingAssignedToUserId &&
+				!editableFields.canEditAssignedToUserId
+			) {
+				throw forbiddenError();
+			}
+			const isChangingDeliveryAddress =
+				input.deliveryAddress !== currentOrder.deliveryAddress;
+			if (isChangingDeliveryAddress && !editableFields.canEditDeliveryAddress) {
+				throw forbiddenError();
+			}
+			const isChangingExpectedDeliveryAt =
+				input.expectedDeliveryAt.getTime() !==
+				currentOrder.expectedDeliveryAt.getTime();
+			if (
+				isChangingExpectedDeliveryAt &&
+				!editableFields.canEditExpectedDeliveryAt
+			) {
+				throw forbiddenError();
+			}
+			const isChangingStatus = input.status !== currentOrder.status;
+			if (isChangingStatus && !editableFields.canEditStatus) {
+				throw forbiddenError();
+			}
 
-				const isChangingRestrictedOrderFields =
-					input.customerId !== currentOrder.customerId ||
-					input.deliveryAddress !== currentOrder.deliveryAddress ||
-					input.expectedDeliveryAt.getTime() !==
-						currentOrder.expectedDeliveryAt.getTime();
+			const itemChanges = getOrderItemsChangeSet({
+				currentItems,
+				nextItems: input.items,
+			});
 
-				if (isChangingRestrictedOrderFields) {
-					throw forbiddenError();
-				}
-
-				if (
-					!isAssignedUpdaterAllowedItemsUpdate({
-						currentItems,
-						nextItems: input.items,
-					})
-				) {
-					throw forbiddenError();
-				}
+			if (itemChanges.hasAddedItems && !editableFields.canAddItems) {
+				throw forbiddenError();
+			}
+			if (itemChanges.hasRemovedItems && !editableFields.canRemoveItems) {
+				throw forbiddenError();
+			}
+			if (
+				itemChanges.hasProductIdChanged &&
+				!editableFields.canEditItemProductId
+			) {
+				throw forbiddenError();
+			}
+			if (itemChanges.hasPriceChanged && !editableFields.canEditItemPrice) {
+				throw forbiddenError();
+			}
+			if (
+				itemChanges.hasQuantityChanged &&
+				!editableFields.canEditItemQuantity
+			) {
+				throw forbiddenError();
 			}
 
 			const [updatedOrder] = await tx
@@ -197,7 +213,7 @@ export const updateOrder = procedures.auth
 		});
 	});
 
-function isAssignedUpdaterAllowedItemsUpdate({
+function getOrderItemsChangeSet({
 	currentItems,
 	nextItems,
 }: {
@@ -211,33 +227,54 @@ function isAssignedUpdaterAllowedItemsUpdate({
 		quantity: number;
 		price: number;
 	}>;
-}): boolean {
-	if (currentItems.length !== nextItems.length) {
-		return false;
-	}
+}) {
+	const hasAddedItems = nextItems.length > currentItems.length;
+	const hasRemovedItems = nextItems.length < currentItems.length;
 
-	const currentMap = new Map(
-		currentItems.map((item) => [item.productId, item]),
+	const currentProductIdSignature = createItemsSignature(
+		currentItems,
+		(item) => item.productId,
 	);
-	const nextMap = new Map(nextItems.map((item) => [item.productId, item]));
+	const nextProductIdSignature = createItemsSignature(
+		nextItems,
+		(item) => item.productId,
+	);
+	const hasProductIdChanged = currentProductIdSignature !== nextProductIdSignature;
 
-	if (
-		currentMap.size !== currentItems.length ||
-		nextMap.size !== nextItems.length
-	) {
-		return false;
-	}
+	const currentProductPriceSignature = createItemsSignature(
+		currentItems,
+		(item) => `${item.productId}::${item.price}`,
+	);
+	const nextProductPriceSignature = createItemsSignature(
+		nextItems,
+		(item) => `${item.productId}::${item.price}`,
+	);
+	const hasProductPriceChanged =
+		currentProductPriceSignature !== nextProductPriceSignature;
+	const hasPriceChanged = !hasProductIdChanged && hasProductPriceChanged;
 
-	for (const [productId, currentItem] of currentMap.entries()) {
-		const nextItem = nextMap.get(productId);
-		if (!nextItem) {
-			return false;
-		}
+	const currentFullSignature = createItemsSignature(
+		currentItems,
+		(item) => `${item.productId}::${item.price}::${item.quantity}`,
+	);
+	const nextFullSignature = createItemsSignature(
+		nextItems,
+		(item) => `${item.productId}::${item.price}::${item.quantity}`,
+	);
+	const hasQuantityChanged = !hasProductPriceChanged && currentFullSignature !== nextFullSignature;
 
-		if (nextItem.price !== currentItem.price) {
-			return false;
-		}
-	}
+	return {
+		hasAddedItems,
+		hasRemovedItems,
+		hasProductIdChanged,
+		hasPriceChanged,
+		hasQuantityChanged,
+	};
+}
 
-	return true;
+function createItemsSignature<TItem>(
+	items: readonly TItem[],
+	getSignaturePart: (item: TItem) => string,
+): string {
+	return items.map((item) => getSignaturePart(item)).sort().join('|');
 }

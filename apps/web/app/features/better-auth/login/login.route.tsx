@@ -81,6 +81,18 @@ export default function LoginRoute() {
 					});
 				}
 
+				if (error.code === 'BANNED_USER') {
+					formApi.setErrorMap({
+						onSubmit: {
+							fields: {
+								email: {
+									message: m.bannedUser(),
+								},
+							},
+						},
+					});
+				}
+
 				const key = errorCodes[error.code];
 				return toast.error(m[key]());
 			} catch (err) {

@@ -142,6 +142,32 @@ export function EditOrderDialog({
 	);
 
 	const isLoading = updateMutation.isPending;
+	const editableFields = order?.actions.editableFields;
+	const canEditCustomerId = editableFields?.canEditCustomerId ?? false;
+	const canEditAssignedToUserId =
+		editableFields?.canEditAssignedToUserId ?? false;
+	const canEditDeliveryAddress =
+		editableFields?.canEditDeliveryAddress ?? false;
+	const canEditExpectedDeliveryAt =
+		editableFields?.canEditExpectedDeliveryAt ?? false;
+	const canEditStatus = editableFields?.canEditStatus ?? false;
+	const canEditItemProductId = editableFields?.canEditItemProductId ?? false;
+	const canEditItemQuantity = editableFields?.canEditItemQuantity ?? false;
+	const canEditItemPrice = editableFields?.canEditItemPrice ?? false;
+	const canAddItems = editableFields?.canAddItems ?? false;
+	const canRemoveItems = editableFields?.canRemoveItems ?? false;
+	const canSubmitChanges = [
+		canEditCustomerId,
+		canEditAssignedToUserId,
+		canEditDeliveryAddress,
+		canEditExpectedDeliveryAt,
+		canEditStatus,
+		canEditItemProductId,
+		canEditItemQuantity,
+		canEditItemPrice,
+		canAddItems,
+		canRemoveItems,
+	].some(Boolean);
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -182,7 +208,7 @@ export function EditOrderDialog({
 														);
 													}
 												}}
-												disabled={isLoading}
+												disabled={isLoading || !canEditCustomerId}
 												items={customers}
 												itemToStringLabel={(item) => item.name}
 											>
@@ -229,7 +255,7 @@ export function EditOrderDialog({
 												onValueChange={(val) =>
 													field.handleChange(val?.id ?? null)
 												}
-												disabled={isLoading}
+												disabled={isLoading || !canEditAssignedToUserId}
 												items={assignableUsers}
 												itemToStringLabel={(item) => item.name}
 											>
@@ -276,7 +302,7 @@ export function EditOrderDialog({
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
 											onBlur={() => field.handleBlur()}
-											disabled={isLoading}
+											disabled={isLoading || !canEditDeliveryAddress}
 										/>
 										<FieldError errors={field.state.meta.errors} />
 									</Field>
@@ -304,7 +330,9 @@ export function EditOrderDialog({
 														type="button"
 														variant="outline"
 														aria-invalid={isInvalid}
-														disabled={isLoading}
+														disabled={
+															isLoading || !canEditExpectedDeliveryAt
+														}
 														className="w-full justify-start font-normal"
 													/>
 												}
@@ -350,7 +378,7 @@ export function EditOrderDialog({
 										<Select
 											value={field.state.value}
 											onValueChange={field.handleChange}
-											disabled={isLoading}
+											disabled={isLoading || !canEditStatus}
 											itemToStringLabel={(item) => {
 												switch (item) {
 													case 'pending':
@@ -403,7 +431,7 @@ export function EditOrderDialog({
 										price: '',
 									})
 								}
-								disabled={isLoading}
+								disabled={isLoading || !canAddItems}
 							>
 								<HugeiconsIcon icon={Add01Icon} className="h-3.5 w-3.5" />
 								{m.orderAddItem()}
@@ -427,7 +455,8 @@ export function EditOrderDialog({
 												<p className="text-xs font-medium text-muted-foreground">
 													#{index + 1}
 												</p>
-												{itemsField.state.value.length > 1 && (
+												{itemsField.state.value.length > 1 &&
+													canRemoveItems && (
 													<Button
 														type="button"
 														variant="ghost"
@@ -436,7 +465,7 @@ export function EditOrderDialog({
 														onClick={() =>
 															form.removeFieldValue('items', index)
 														}
-														disabled={isLoading}
+														disabled={isLoading || !canRemoveItems}
 													>
 														<HugeiconsIcon
 															icon={Delete02Icon}
@@ -469,13 +498,17 @@ export function EditOrderDialog({
 																			value={selectedProduct}
 																			onValueChange={(value) => {
 																				field.handleChange(value?.id ?? '');
-																				form.setFieldValue(
-																					`items[${index}].price` as const,
-																					value ? String(value.price) : '',
-																					{ dontUpdateMeta: true },
-																				);
+																				if (canEditItemPrice) {
+																					form.setFieldValue(
+																						`items[${index}].price` as const,
+																						value ? String(value.price) : '',
+																						{ dontUpdateMeta: true },
+																					);
+																				}
 																			}}
-																			disabled={isLoading}
+																			disabled={
+																				isLoading || !canEditItemProductId
+																			}
 																			items={products}
 																			filter={(item, query) =>
 																				getOrderProductSearchLabel(item)
@@ -546,7 +579,9 @@ export function EditOrderDialog({
 																			field.handleChange(e.target.value)
 																		}
 																		onBlur={() => field.handleBlur()}
-																		disabled={isLoading}
+																		disabled={
+																			isLoading || !canEditItemQuantity
+																		}
 																	/>
 																	<FieldError
 																		errors={field.state.meta.errors}
@@ -580,7 +615,7 @@ export function EditOrderDialog({
 																			field.handleChange(e.target.value)
 																		}
 																		onBlur={() => field.handleBlur()}
-																		disabled={isLoading}
+																		disabled={isLoading || !canEditItemPrice}
 																	/>
 																	<FieldError
 																		errors={field.state.meta.errors}
@@ -606,7 +641,7 @@ export function EditOrderDialog({
 								</Button>
 							}
 						/>
-						<Button type="submit" disabled={isLoading}>
+						<Button type="submit" disabled={isLoading || !canSubmitChanges}>
 							{isLoading ? (
 								<>
 									<Spinner className="mr-2 h-4 w-4" />

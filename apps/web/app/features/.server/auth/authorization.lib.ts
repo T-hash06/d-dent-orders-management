@@ -20,6 +20,18 @@ export type OrderActions = {
 	canDelete: boolean;
 	canUpdateStatus: boolean;
 	canAssign: boolean;
+	editableFields: {
+		canEditCustomerId: boolean;
+		canEditAssignedToUserId: boolean;
+		canEditDeliveryAddress: boolean;
+		canEditExpectedDeliveryAt: boolean;
+		canEditStatus: boolean;
+		canEditItemProductId: boolean;
+		canEditItemQuantity: boolean;
+		canEditItemPrice: boolean;
+		canAddItems: boolean;
+		canRemoveItems: boolean;
+	};
 };
 
 export type UserActions = {
@@ -120,10 +132,12 @@ export const buildOrderActions = ({
 	assignedToUserId: string | null;
 }): OrderActions => {
 	const assignedToCurrentUser = isAssignedToUser(assignedToUserId, userId);
-	const canEdit =
-		hasPermission(permissions, { orders: ['update-all'] }) ||
-		(assignedToCurrentUser &&
-			hasPermission(permissions, { orders: ['update-assigned'] }));
+	const canUpdateAllOrderFields = hasPermission(permissions, {
+		orders: ['update-all'],
+	});
+	const canUpdateAssignedOrderFields =
+		assignedToCurrentUser &&
+		hasPermission(permissions, { orders: ['update-assigned'] });
 	const canUpdateStatus =
 		hasPermission(permissions, { orders: ['update-status-all'] }) ||
 		(assignedToCurrentUser &&
@@ -132,12 +146,52 @@ export const buildOrderActions = ({
 		hasPermission(permissions, { orders: ['assign-all'] }) ||
 		(assignedToCurrentUser &&
 			hasPermission(permissions, { orders: ['assign-assigned'] }));
+	const canEdit = canUpdateAllOrderFields || canUpdateAssignedOrderFields;
+	const editableFields = canUpdateAllOrderFields
+		? {
+				canEditCustomerId: true,
+				canEditAssignedToUserId: true,
+				canEditDeliveryAddress: true,
+				canEditExpectedDeliveryAt: true,
+				canEditStatus: true,
+				canEditItemProductId: true,
+				canEditItemQuantity: true,
+				canEditItemPrice: true,
+				canAddItems: true,
+				canRemoveItems: true,
+			}
+		: canUpdateAssignedOrderFields
+			? {
+					canEditCustomerId: false,
+					canEditAssignedToUserId: canAssign,
+					canEditDeliveryAddress: false,
+					canEditExpectedDeliveryAt: false,
+					canEditStatus: canUpdateStatus,
+					canEditItemProductId: false,
+					canEditItemQuantity: true,
+					canEditItemPrice: false,
+					canAddItems: false,
+					canRemoveItems: false,
+				}
+			: {
+					canEditCustomerId: false,
+					canEditAssignedToUserId: false,
+					canEditDeliveryAddress: false,
+					canEditExpectedDeliveryAt: false,
+					canEditStatus: canUpdateStatus,
+					canEditItemProductId: false,
+					canEditItemQuantity: false,
+					canEditItemPrice: false,
+					canAddItems: false,
+					canRemoveItems: false,
+				};
 
 	return {
 		canEdit,
 		canDelete: hasPermission(permissions, { orders: ['delete'] }),
 		canUpdateStatus,
 		canAssign,
+		editableFields,
 	};
 };
 
