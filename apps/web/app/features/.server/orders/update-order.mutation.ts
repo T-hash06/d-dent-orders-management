@@ -10,6 +10,7 @@ import { orderItems, orders } from '@/features/.server/orders/order.schema';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
 import { procedures } from '@/features/.server/trpc/trpc.init';
 import { m } from '@/features/i18n/paraglide/messages';
+import { ORDER_PAYMENT_STATUS_VALUES } from '@/features/orders/domain/order-payment-status';
 import { ORDER_STATUS_VALUES } from '@/features/orders/domain/order-status';
 
 const updateOrderItemInput = z.object({
@@ -42,6 +43,13 @@ const updateOrderItemInput = z.object({
 			error: () =>
 				m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
 		}),
+	details: z
+		.string({
+			error: () =>
+				m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
+		})
+		.optional()
+		.default(''),
 });
 
 const updateOrderInput = z.object({
@@ -76,6 +84,9 @@ const updateOrderInput = z.object({
 	status: z.enum(ORDER_STATUS_VALUES, {
 		error: () => m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
 	}),
+	paymentStatus: z.enum(ORDER_PAYMENT_STATUS_VALUES, {
+		error: () => m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
+	}),
 	deliveryAddress: z
 		.string({
 			error: () => m.missingField({}, { locale: getLocaleFromAsyncStorage() }),
@@ -94,6 +105,8 @@ export const updateOrder = procedures.auth
 		assertHasAnyPermission(ctx.permissions, [
 			{ orders: ['update-all'] },
 			{ orders: ['update-assigned'] },
+			{ orders: ['update-item-details-all'] },
+			{ orders: ['update-item-details-assigned'] },
 		]);
 
 		return db.transaction(async (tx) => {
@@ -121,6 +134,7 @@ export const updateOrder = procedures.auth
 					productId: orderItems.productId,
 					quantity: orderItems.quantity,
 					price: orderItems.price,
+					details: orderItems.details,
 				})
 				.from(orderItems)
 				.where(eq(orderItems.orderId, input.id));
@@ -152,7 +166,18 @@ export const updateOrder = procedures.auth
 				throw forbiddenError();
 			}
 			const isChangingStatus = input.status !== currentOrder.status;
-			if (isChangingStatus && !editableFields.canEditStatus) {
+			if (isChangingStatus) {
+				if (input.status === 'cancelled') {
+					if (!editableFields.canCancelOrder) {
+						throw forbiddenError();
+					}
+				} else if (!editableFields.canEditStatus) {
+					throw forbiddenError();
+				}
+			}
+			const isChangingPaymentStatus =
+				input.paymentStatus !== currentOrder.paymentStatus;
+			if (isChangingPaymentStatus && !editableFields.canEditPaymentStatus) {
 				throw forbiddenError();
 			}
 
@@ -182,6 +207,9 @@ export const updateOrder = procedures.auth
 			) {
 				throw forbiddenError();
 			}
+			if (itemChanges.hasDetailsChanged && !editableFields.canEditItemDetails) {
+				throw forbiddenError();
+			}
 
 			const [updatedOrder] = await tx
 				.update(orders)
@@ -190,6 +218,7 @@ export const updateOrder = procedures.auth
 					assignedToUserId: input.assignedToUserId ?? null,
 					expectedDeliveryAt: input.expectedDeliveryAt,
 					status: input.status,
+					paymentStatus: input.paymentStatus,
 					deliveryAddress: input.deliveryAddress,
 					updatedById: ctx.user.id,
 				})
@@ -204,6 +233,7 @@ export const updateOrder = procedures.auth
 					productId: item.productId,
 					quantity: item.quantity,
 					price: item.price,
+					details: item.details,
 					createdById: ctx.user.id,
 					updatedById: ctx.user.id,
 				})),
@@ -221,11 +251,13 @@ function getOrderItemsChangeSet({
 		productId: string;
 		quantity: number;
 		price: number;
+		details: string;
 	}>;
 	nextItems: Array<{
 		productId: string;
 		quantity: number;
 		price: number;
+		details: string;
 	}>;
 }) {
 	const hasAddedItems = nextItems.length > currentItems.length;
@@ -239,7 +271,8 @@ function getOrderItemsChangeSet({
 		nextItems,
 		(item) => item.productId,
 	);
-	const hasProductIdChanged = currentProductIdSignature !== nextProductIdSignature;
+	const hasProductIdChanged =
+		currentProductIdSignature !== nextProductIdSignature;
 
 	const currentProductPriceSignature = createItemsSignature(
 		currentItems,
@@ -253,21 +286,39 @@ function getOrderItemsChangeSet({
 		currentProductPriceSignature !== nextProductPriceSignature;
 	const hasPriceChanged = !hasProductIdChanged && hasProductPriceChanged;
 
+	const currentProductDetailsSignature = createItemsSignature(
+		currentItems,
+		(item) => `${item.productId}::${item.price}::${item.details}`,
+	);
+	const nextProductDetailsSignature = createItemsSignature(
+		nextItems,
+		(item) => `${item.productId}::${item.price}::${item.details}`,
+	);
+	const hasProductDetailsChanged =
+		currentProductDetailsSignature !== nextProductDetailsSignature;
+	const hasDetailsChanged = !hasProductPriceChanged && hasProductDetailsChanged;
+
 	const currentFullSignature = createItemsSignature(
 		currentItems,
-		(item) => `${item.productId}::${item.price}::${item.quantity}`,
+		(item) =>
+			`${item.productId}::${item.price}::${item.details}::${item.quantity}`,
 	);
 	const nextFullSignature = createItemsSignature(
 		nextItems,
-		(item) => `${item.productId}::${item.price}::${item.quantity}`,
+		(item) =>
+			`${item.productId}::${item.price}::${item.details}::${item.quantity}`,
 	);
-	const hasQuantityChanged = !hasProductPriceChanged && currentFullSignature !== nextFullSignature;
+	const hasQuantityChanged =
+		!hasProductPriceChanged &&
+		!hasProductDetailsChanged &&
+		currentFullSignature !== nextFullSignature;
 
 	return {
 		hasAddedItems,
 		hasRemovedItems,
 		hasProductIdChanged,
 		hasPriceChanged,
+		hasDetailsChanged,
 		hasQuantityChanged,
 	};
 }
@@ -276,5 +327,8 @@ function createItemsSignature<TItem>(
 	items: readonly TItem[],
 	getSignaturePart: (item: TItem) => string,
 ): string {
-	return items.map((item) => getSignaturePart(item)).sort().join('|');
+	return items
+		.map((item) => getSignaturePart(item))
+		.sort()
+		.join('|');
 }

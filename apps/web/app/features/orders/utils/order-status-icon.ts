@@ -1,4 +1,5 @@
 import {
+	Cancel01Icon,
 	CheckCircle,
 	Clock01Icon,
 	DashboardCircleIcon,
@@ -13,5 +14,7 @@ export function getOrderStatusIcon(status: OrderStatus) {
 			return Clock01Icon;
 		case 'in_progress':
 			return DashboardCircleIcon;
+		case 'cancelled':
+			return Cancel01Icon;
 	}
 }

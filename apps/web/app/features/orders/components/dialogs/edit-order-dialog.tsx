@@ -98,7 +98,10 @@ export function EditOrderDialog({
 			deliveryAddress: order?.deliveryAddress ?? '',
 			expectedDeliveryAt: order?.expectedDeliveryAt ?? new Date(),
 			status: order?.status ?? 'pending',
-			items: order?.items ?? [{ productId: '', quantity: 1, price: 0 }],
+			paymentStatus: order?.paymentStatus ?? 'pending',
+			items: order?.items ?? [
+				{ productId: '', quantity: 1, price: 0, details: '' },
+			],
 		}),
 		onSubmit: async ({ value }) => {
 			if (!order) return;
@@ -111,6 +114,7 @@ export function EditOrderDialog({
 				deliveryAddress: parsedValue.deliveryAddress,
 				expectedDeliveryAt: parsedValue.expectedDeliveryAt,
 				status: parsedValue.status,
+				paymentStatus: parsedValue.paymentStatus,
 				items: parsedValue.items,
 			});
 		},
@@ -125,10 +129,12 @@ export function EditOrderDialog({
 			deliveryAddress: order.deliveryAddress,
 			expectedDeliveryAt: order.expectedDeliveryAt,
 			status: order.status,
+			paymentStatus: order.paymentStatus,
 			items: order.items.map((item) => ({
 				productId: item.productId,
 				quantity: String(item.quantity),
 				price: String(item.price),
+				details: item.details,
 			})),
 		});
 	}, [order, form]);
@@ -151,9 +157,12 @@ export function EditOrderDialog({
 	const canEditExpectedDeliveryAt =
 		editableFields?.canEditExpectedDeliveryAt ?? false;
 	const canEditStatus = editableFields?.canEditStatus ?? false;
+	const canCancelOrder = editableFields?.canCancelOrder ?? false;
+	const canEditPaymentStatus = editableFields?.canEditPaymentStatus ?? false;
 	const canEditItemProductId = editableFields?.canEditItemProductId ?? false;
 	const canEditItemQuantity = editableFields?.canEditItemQuantity ?? false;
 	const canEditItemPrice = editableFields?.canEditItemPrice ?? false;
+	const canEditItemDetails = editableFields?.canEditItemDetails ?? false;
 	const canAddItems = editableFields?.canAddItems ?? false;
 	const canRemoveItems = editableFields?.canRemoveItems ?? false;
 	const canSubmitChanges = [
@@ -162,9 +171,12 @@ export function EditOrderDialog({
 		canEditDeliveryAddress,
 		canEditExpectedDeliveryAt,
 		canEditStatus,
+		canCancelOrder,
+		canEditPaymentStatus,
 		canEditItemProductId,
 		canEditItemQuantity,
 		canEditItemPrice,
+		canEditItemDetails,
 		canAddItems,
 		canRemoveItems,
 	].some(Boolean);
@@ -330,9 +342,7 @@ export function EditOrderDialog({
 														type="button"
 														variant="outline"
 														aria-invalid={isInvalid}
-														disabled={
-															isLoading || !canEditExpectedDeliveryAt
-														}
+														disabled={isLoading || !canEditExpectedDeliveryAt}
 														className="w-full justify-start font-normal"
 													/>
 												}
@@ -378,7 +388,9 @@ export function EditOrderDialog({
 										<Select
 											value={field.state.value}
 											onValueChange={field.handleChange}
-											disabled={isLoading || !canEditStatus}
+											disabled={
+												isLoading || (!canEditStatus && !canCancelOrder)
+											}
 											itemToStringLabel={(item) => {
 												switch (item) {
 													case 'pending':
@@ -387,6 +399,8 @@ export function EditOrderDialog({
 														return m.orderStatusInProgress();
 													case 'completed':
 														return m.orderStatusCompleted();
+													case 'cancelled':
+														return m.orderStatusCancelled();
 													default:
 														return item;
 												}
@@ -405,6 +419,58 @@ export function EditOrderDialog({
 													</SelectItem>
 													<SelectItem value="completed">
 														{m.orderStatusCompleted()}
+													</SelectItem>
+													{(canCancelOrder ||
+														order?.status === 'cancelled') && (
+														<SelectItem value="cancelled">
+															{m.orderStatusCancelled()}
+														</SelectItem>
+													)}
+												</SelectGroup>
+											</SelectContent>
+										</Select>
+										<FieldError errors={field.state.meta.errors} />
+									</Field>
+								);
+							}}
+						</form.Field>
+
+						<form.Field name="paymentStatus">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>
+											{m.orderPaymentStatus()}
+										</FieldLabel>
+										<Select
+											value={field.state.value}
+											onValueChange={field.handleChange}
+											disabled={isLoading || !canEditPaymentStatus}
+											itemToStringLabel={(item) => {
+												switch (item) {
+													case 'pending':
+														return m.orderPaymentStatusPending();
+													case 'paid':
+														return m.orderPaymentStatusPaid();
+													default:
+														return item;
+												}
+											}}
+										>
+											<SelectTrigger aria-invalid={isInvalid}>
+												<SelectValue
+													placeholder={m.orderPaymentStatusPlaceholder()}
+												/>
+											</SelectTrigger>
+											<SelectContent alignItemWithTrigger={false}>
+												<SelectGroup>
+													<SelectItem value="pending">
+														{m.orderPaymentStatusPending()}
+													</SelectItem>
+													<SelectItem value="paid">
+														{m.orderPaymentStatusPaid()}
 													</SelectItem>
 												</SelectGroup>
 											</SelectContent>
@@ -429,6 +495,7 @@ export function EditOrderDialog({
 										productId: '',
 										quantity: '1',
 										price: '',
+										details: '',
 									})
 								}
 								disabled={isLoading || !canAddItems}
@@ -457,22 +524,22 @@ export function EditOrderDialog({
 												</p>
 												{itemsField.state.value.length > 1 &&
 													canRemoveItems && (
-													<Button
-														type="button"
-														variant="ghost"
-														size="icon"
-														className="h-11 w-11 sm:h-8 sm:w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-														onClick={() =>
-															form.removeFieldValue('items', index)
-														}
-														disabled={isLoading || !canRemoveItems}
-													>
-														<HugeiconsIcon
-															icon={Delete02Icon}
-															className="h-3.5 w-3.5"
-														/>
-													</Button>
-												)}
+														<Button
+															type="button"
+															variant="ghost"
+															size="icon"
+															className="h-11 w-11 sm:h-8 sm:w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+															onClick={() =>
+																form.removeFieldValue('items', index)
+															}
+															disabled={isLoading || !canRemoveItems}
+														>
+															<HugeiconsIcon
+																icon={Delete02Icon}
+																className="h-3.5 w-3.5"
+															/>
+														</Button>
+													)}
 											</div>
 
 											<div className="grid gap-3 md:grid-cols-12 md:items-start">
@@ -579,9 +646,7 @@ export function EditOrderDialog({
 																			field.handleChange(e.target.value)
 																		}
 																		onBlur={() => field.handleBlur()}
-																		disabled={
-																			isLoading || !canEditItemQuantity
-																		}
+																		disabled={isLoading || !canEditItemQuantity}
 																	/>
 																	<FieldError
 																		errors={field.state.meta.errors}
@@ -616,6 +681,39 @@ export function EditOrderDialog({
 																		}
 																		onBlur={() => field.handleBlur()}
 																		disabled={isLoading || !canEditItemPrice}
+																	/>
+																	<FieldError
+																		errors={field.state.meta.errors}
+																	/>
+																</Field>
+															);
+														}}
+													</form.Field>
+												</div>
+
+												<div className="md:col-span-12">
+													<form.Field name={`items[${index}].details`}>
+														{(field) => {
+															const isInvalid =
+																field.state.meta.isTouched &&
+																!field.state.meta.isValid;
+
+															return (
+																<Field data-invalid={isInvalid}>
+																	<FieldLabel htmlFor={field.name}>
+																		{m.orderItemDetails()}
+																	</FieldLabel>
+																	<Input
+																		id={field.name}
+																		name={field.name}
+																		placeholder={m.orderItemDetailsPlaceholder()}
+																		aria-invalid={isInvalid}
+																		value={field.state.value}
+																		onChange={(e) =>
+																			field.handleChange(e.target.value)
+																		}
+																		onBlur={() => field.handleBlur()}
+																		disabled={isLoading || !canEditItemDetails}
 																	/>
 																	<FieldError
 																		errors={field.state.meta.errors}

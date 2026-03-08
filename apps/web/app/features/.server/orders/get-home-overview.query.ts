@@ -1,6 +1,8 @@
 import { and, eq } from 'drizzle-orm';
 import {
 	assertHasAnyPermission,
+	assertHasPermission,
+	canAccessAnalyticsGroup,
 	canBeAssignedOrder,
 	canReadAllOrders,
 	canReadAssignedOrders,
@@ -12,11 +14,28 @@ import { procedures } from '@/features/.server/trpc/trpc.init';
 import { isOrderLate } from '@/features/orders/domain/order-status';
 
 export const getHomeOverview = procedures.auth.query(async ({ ctx }) => {
+	assertHasPermission(ctx.permissions, { analytics: ['list'] });
+	assertHasAnyPermission(ctx.permissions, [
+		{ analytics: ['overview-all'] },
+		{ analytics: ['overview-assigned'] },
+	]);
 	assertHasAnyPermission(ctx.permissions, [
 		{ orders: ['list-all'] },
 		{ orders: ['list-assigned'] },
 	]);
+	const canReadOverviewAll = canAccessAnalyticsGroup(
+		ctx.permissions,
+		'overview',
+		'all',
+	);
+	const canReadOverviewAssigned = canAccessAnalyticsGroup(
+		ctx.permissions,
+		'overview',
+		'assigned',
+	);
 	const shouldScopeToAssigned =
+		!canReadOverviewAll &&
+		canReadOverviewAssigned &&
 		!canReadAllOrders(ctx.permissions) &&
 		canReadAssignedOrders(ctx.permissions);
 

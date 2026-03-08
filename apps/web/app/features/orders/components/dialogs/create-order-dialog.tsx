@@ -38,6 +38,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { enUS, es } from 'date-fns/locale';
 import { type SubmitEvent, useCallback, useState } from 'react';
+import { useSession } from '@/features/better-auth/better-auth.context';
 import { m } from '@/features/i18n/paraglide/messages';
 import { getLocale } from '@/features/i18n/paraglide/runtime';
 import {
@@ -54,6 +55,7 @@ import { useTRPC } from '@/features/trpc/trpc.context';
 export function CreateOrderDialog() {
 	const [open, setOpen] = useState(false);
 	const [datePickerOpen, setDatePickerOpen] = useState(false);
+	const { permissions } = useSession();
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
 
@@ -93,6 +95,9 @@ export function CreateOrderDialog() {
 				deliveryAddress: parsedValue.deliveryAddress,
 				expectedDeliveryAt: parsedValue.expectedDeliveryAt,
 				status: parsedValue.status,
+				paymentStatus: canEditPaymentStatus
+					? parsedValue.paymentStatus
+					: 'pending',
 				items: parsedValue.items,
 			});
 		},
@@ -107,6 +112,10 @@ export function CreateOrderDialog() {
 	);
 
 	const isLoading = createMutation.isPending;
+	const canEditPaymentStatus = permissions.orders.includes(
+		'update-payment-status',
+	);
+	const canCancelOrder = permissions.orders.includes('cancel');
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
@@ -329,6 +338,8 @@ export function CreateOrderDialog() {
 														return m.orderStatusInProgress();
 													case 'completed':
 														return m.orderStatusCompleted();
+													case 'cancelled':
+														return m.orderStatusCancelled();
 													default:
 														return item;
 												}
@@ -347,6 +358,57 @@ export function CreateOrderDialog() {
 													</SelectItem>
 													<SelectItem value="completed">
 														{m.orderStatusCompleted()}
+													</SelectItem>
+													{canCancelOrder && (
+														<SelectItem value="cancelled">
+															{m.orderStatusCancelled()}
+														</SelectItem>
+													)}
+												</SelectGroup>
+											</SelectContent>
+										</Select>
+										<FieldError errors={field.state.meta.errors} />
+									</Field>
+								);
+							}}
+						</form.Field>
+
+						<form.Field name="paymentStatus">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>
+											{m.orderPaymentStatus()}
+										</FieldLabel>
+										<Select
+											value={field.state.value}
+											onValueChange={field.handleChange}
+											disabled={isLoading || !canEditPaymentStatus}
+											itemToStringLabel={(item) => {
+												switch (item) {
+													case 'pending':
+														return m.orderPaymentStatusPending();
+													case 'paid':
+														return m.orderPaymentStatusPaid();
+													default:
+														return item;
+												}
+											}}
+										>
+											<SelectTrigger aria-invalid={isInvalid}>
+												<SelectValue
+													placeholder={m.orderPaymentStatusPlaceholder()}
+												/>
+											</SelectTrigger>
+											<SelectContent alignItemWithTrigger={false}>
+												<SelectGroup>
+													<SelectItem value="pending">
+														{m.orderPaymentStatusPending()}
+													</SelectItem>
+													<SelectItem value="paid">
+														{m.orderPaymentStatusPaid()}
 													</SelectItem>
 												</SelectGroup>
 											</SelectContent>
@@ -371,6 +433,7 @@ export function CreateOrderDialog() {
 										productId: '',
 										quantity: '1',
 										price: '',
+										details: '',
 									})
 								}
 								disabled={isLoading}
@@ -545,6 +608,38 @@ export function CreateOrderDialog() {
 																		min="0"
 																		step="50"
 																		placeholder={m.orderItemPricePlaceholder()}
+																		aria-invalid={isInvalid}
+																		value={field.state.value}
+																		onChange={(e) =>
+																			field.handleChange(e.target.value)
+																		}
+																		onBlur={() => field.handleBlur()}
+																		disabled={isLoading}
+																	/>
+																	<FieldError
+																		errors={field.state.meta.errors}
+																	/>
+																</Field>
+															);
+														}}
+													</form.Field>
+												</div>
+
+												<div className="sm:col-span-2 lg:col-span-12">
+													<form.Field name={`items[${index}].details`}>
+														{(field) => {
+															const isInvalid =
+																field.state.meta.isTouched &&
+																!field.state.meta.isValid;
+															return (
+																<Field data-invalid={isInvalid}>
+																	<FieldLabel htmlFor={field.name}>
+																		{m.orderItemDetails()}
+																	</FieldLabel>
+																	<Input
+																		id={field.name}
+																		name={field.name}
+																		placeholder={m.orderItemDetailsPlaceholder()}
 																		aria-invalid={isInvalid}
 																		value={field.state.value}
 																		onChange={(e) =>

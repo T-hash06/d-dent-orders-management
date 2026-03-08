@@ -69,6 +69,7 @@ export const getOrderById = procedures.auth
 				productId: orderItems.productId,
 				quantity: orderItems.quantity,
 				price: orderItems.price,
+				details: orderItems.details,
 			})
 			.from(orderItems)
 			.where(eq(orderItems.orderId, order.id));

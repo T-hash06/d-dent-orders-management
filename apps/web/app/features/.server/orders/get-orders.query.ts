@@ -44,6 +44,7 @@ export const getOrders = procedures.auth
 						? eq(orders.assignedToUserId, ctx.user.id)
 						: undefined,
 					input?.lateOnly ? ne(orders.status, 'completed') : undefined,
+					input?.lateOnly ? ne(orders.status, 'cancelled') : undefined,
 					input?.lateOnly
 						? lt(orders.expectedDeliveryAt, new Date())
 						: undefined,
@@ -77,6 +78,7 @@ export const getOrders = procedures.auth
 						productId: orderItems.productId,
 						quantity: orderItems.quantity,
 						price: orderItems.price,
+						details: orderItems.details,
 					})
 					.from(orderItems)
 					.where(eq(orderItems.orderId, order.id));

@@ -1,10 +1,15 @@
 import * as z from 'zod';
-import { assertHasPermission } from '@/features/.server/auth/authorization.lib';
+import {
+	assertHasPermission,
+	forbiddenError,
+	hasPermission,
+} from '@/features/.server/auth/authorization.lib';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import { orderItems, orders } from '@/features/.server/orders/order.schema';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
 import { procedures } from '@/features/.server/trpc/trpc.init';
 import { m } from '@/features/i18n/paraglide/messages';
+import { ORDER_PAYMENT_STATUS_VALUES } from '@/features/orders/domain/order-payment-status';
 import { ORDER_STATUS_VALUES } from '@/features/orders/domain/order-status';
 
 const createOrderItemInput = z.object({
@@ -37,6 +42,13 @@ const createOrderItemInput = z.object({
 			error: () =>
 				m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
 		}),
+	details: z
+		.string({
+			error: () =>
+				m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
+		})
+		.optional()
+		.default(''),
 });
 
 const createOrderInput = z.object({
@@ -64,6 +76,9 @@ const createOrderInput = z.object({
 	status: z.enum(ORDER_STATUS_VALUES, {
 		error: () => m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
 	}),
+	paymentStatus: z.enum(ORDER_PAYMENT_STATUS_VALUES, {
+		error: () => m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
+	}),
 	deliveryAddress: z
 		.string({
 			error: () => m.missingField({}, { locale: getLocaleFromAsyncStorage() }),
@@ -82,6 +97,18 @@ export const createOrder = procedures.auth
 		assertHasPermission(ctx.permissions, {
 			orders: ['create'],
 		});
+		if (
+			input.paymentStatus !== 'pending' &&
+			!hasPermission(ctx.permissions, { orders: ['update-payment-status'] })
+		) {
+			throw forbiddenError();
+		}
+		if (
+			input.status === 'cancelled' &&
+			!hasPermission(ctx.permissions, { orders: ['cancel'] })
+		) {
+			throw forbiddenError();
+		}
 
 		return db.transaction(async (tx) => {
 			const [createdOrder] = await tx
@@ -91,6 +118,7 @@ export const createOrder = procedures.auth
 					assignedToUserId: input.assignedToUserId ?? null,
 					expectedDeliveryAt: input.expectedDeliveryAt,
 					status: input.status,
+					paymentStatus: input.paymentStatus,
 					deliveryAddress: input.deliveryAddress,
 					createdById: ctx.user.id,
 					updatedById: ctx.user.id,
@@ -103,6 +131,7 @@ export const createOrder = procedures.auth
 					productId: item.productId,
 					quantity: item.quantity,
 					price: item.price,
+					details: item.details,
 					createdById: ctx.user.id,
 					updatedById: ctx.user.id,
 				})),

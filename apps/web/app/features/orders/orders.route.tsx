@@ -62,6 +62,7 @@ import { CreateOrderDialog } from '@/features/orders/components/dialogs/create-o
 import { DeleteOrderDialog } from '@/features/orders/components/dialogs/delete-order-dialog';
 import { EditOrderDialog } from '@/features/orders/components/dialogs/edit-order-dialog';
 import { getOrderColumns } from '@/features/orders/components/table/orders.columns';
+import type { OrderPaymentStatus } from '@/features/orders/domain/order-payment-status';
 import type { OrderStatus } from '@/features/orders/domain/order-status';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
@@ -296,6 +297,44 @@ const OrdersRouteTable = () => {
 			},
 		}),
 	);
+	const updatePaymentStatusMutation = useMutation(
+		trpc.orders.updateOrderPaymentStatus.mutationOptions({
+			onMutate: async (variables) => {
+				await queryClient.cancelQueries({
+					queryKey: getOrdersQueryKey,
+				});
+
+				const previous = queryClient.getQueryData<Order[]>(getOrdersQueryKey);
+
+				queryClient.setQueryData(
+					getOrdersQueryKey,
+					(old: Order[] | undefined) =>
+						(old ?? []).map((o) =>
+							o.id === variables.orderId
+								? { ...o, paymentStatus: variables.paymentStatus }
+								: o,
+						),
+				);
+
+				return { previous };
+			},
+			onError: (error, _vars, context) => {
+				if (context?.previous) {
+					queryClient.setQueryData(getOrdersQueryKey, context.previous);
+				}
+
+				toast.error(
+					error.data?.zodError?.orderId?.message ?? m.editOrderFailed(),
+				);
+			},
+			onSuccess: () => {
+				toast.success(m.editOrderSuccess());
+				queryClient.invalidateQueries({
+					queryKey: trpc.orders.getOrders.queryKey(),
+				});
+			},
+		}),
+	);
 	const locale = getLocale();
 	const selectedExpectedDeliveryRange =
 		expectedDeliveryFrom || expectedDeliveryTo
@@ -319,8 +358,22 @@ const OrdersRouteTable = () => {
 				onStatusChange: (order: Order, status: OrderStatus) => {
 					updateStatusMutation.mutate({ orderId: order.id, status });
 				},
+				onPaymentStatusChange: (
+					order: Order,
+					paymentStatus: OrderPaymentStatus,
+				) => {
+					updatePaymentStatusMutation.mutate({
+						orderId: order.id,
+						paymentStatus,
+					});
+				},
 			}),
-		[setEditOrder, setDeleteOrder, updateStatusMutation.mutate],
+		[
+			setEditOrder,
+			setDeleteOrder,
+			updateStatusMutation.mutate,
+			updatePaymentStatusMutation.mutate,
+		],
 	);
 
 	const table = useReactTable({
@@ -381,6 +434,8 @@ const OrdersRouteTable = () => {
 										return m.orderStatusInProgress();
 									case 'completed':
 										return m.orderStatusCompleted();
+									case 'cancelled':
+										return m.orderStatusCancelled();
 									default:
 										return item;
 								}
@@ -400,6 +455,9 @@ const OrdersRouteTable = () => {
 									</SelectItem>
 									<SelectItem value="completed">
 										{m.orderStatusCompleted()}
+									</SelectItem>
+									<SelectItem value="cancelled">
+										{m.orderStatusCancelled()}
 									</SelectItem>
 								</SelectGroup>
 							</SelectContent>

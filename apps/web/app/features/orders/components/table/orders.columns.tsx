@@ -19,6 +19,8 @@ import {
 } from '@full-stack-template/ui';
 import {
 	ArrowUpIcon,
+	CheckCircle,
+	Clock01Icon,
 	Delete02Icon,
 	MoreHorizontalIcon,
 	PencilEdit01Icon,
@@ -28,6 +30,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { Order } from '@/features/.server/orders/order.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import { getLocale } from '@/features/i18n/paraglide/runtime';
+import type { OrderPaymentStatus } from '@/features/orders/domain/order-payment-status';
 import type { OrderStatus } from '@/features/orders/domain/order-status';
 import { getOrderStatusIcon } from '@/features/orders/utils/order-status-icon';
 
@@ -35,12 +38,17 @@ type OrderColumnsProps = {
 	onEdit: (order: Order) => void;
 	onDelete: (order: Order) => void;
 	onStatusChange: (order: Order, status: OrderStatus) => void;
+	onPaymentStatusChange: (
+		order: Order,
+		paymentStatus: OrderPaymentStatus,
+	) => void;
 };
 
 export function getOrderColumns({
 	onEdit,
 	onDelete,
 	onStatusChange,
+	onPaymentStatusChange,
 }: OrderColumnsProps): ColumnDef<Order>[] {
 	return [
 		{
@@ -137,14 +145,18 @@ export function getOrderColumns({
 						? m.orderStatusPending()
 						: status === 'in_progress'
 							? m.orderStatusInProgress()
-							: m.orderStatusCompleted();
+							: status === 'completed'
+								? m.orderStatusCompleted()
+								: m.orderStatusCancelled();
 
 				const variant =
-					status === 'completed'
-						? 'default'
-						: status === 'in_progress'
-							? 'outline'
-							: 'secondary';
+					status === 'cancelled'
+						? 'destructive'
+						: status === 'completed'
+							? 'default'
+							: status === 'in_progress'
+								? 'outline'
+								: 'secondary';
 
 				return (
 					<Badge variant={variant} className="font-normal text-xs">
@@ -217,6 +229,27 @@ export function getOrderColumns({
 			},
 		},
 		{
+			accessorKey: 'paymentStatus',
+			header: () => m.orderPaymentStatus(),
+			meta: {
+				name: m.orderPaymentStatus(),
+			},
+			cell: ({ row }) => {
+				const paymentStatus = row.original.paymentStatus;
+				const label =
+					paymentStatus === 'paid'
+						? m.orderPaymentStatusPaid()
+						: m.orderPaymentStatusPending();
+				const variant = paymentStatus === 'paid' ? 'default' : 'secondary';
+
+				return (
+					<Badge variant={variant} className="font-normal text-xs">
+						{label}
+					</Badge>
+				);
+			},
+		},
+		{
 			id: 'actions',
 			enableHiding: false,
 			cell: ({ row }) => {
@@ -224,13 +257,22 @@ export function getOrderColumns({
 				const canEdit = order.actions.canEdit;
 				const canDelete = order.actions.canDelete;
 				const canChangeStatus = order.actions.canUpdateStatus;
-				const hasAnyAction = canEdit || canDelete || canChangeStatus;
+				const canCancelOrder = order.actions.canCancelOrder;
+				const canChangePaymentStatus = order.actions.canUpdatePaymentStatus;
+				const hasAnyAction =
+					canEdit || canDelete || canChangeStatus || canChangePaymentStatus;
 				const currentStatus =
 					order.status === 'completed'
 						? m.orderStatusCompleted()
 						: order.status === 'in_progress'
 							? m.orderStatusInProgress()
-							: m.orderStatusPending();
+							: order.status === 'cancelled'
+								? m.orderStatusCancelled()
+								: m.orderStatusPending();
+				const currentPaymentStatus =
+					order.paymentStatus === 'paid'
+						? m.orderPaymentStatusPaid()
+						: m.orderPaymentStatusPending();
 
 				if (!hasAnyAction) {
 					return null;
@@ -300,6 +342,64 @@ export function getOrderColumns({
 																className="mr-2 h-4 w-4"
 															/>
 															{m.orderStatusCompleted()}
+														</DropdownMenuRadioItem>
+														{(canCancelOrder ||
+															order.status === 'cancelled') && (
+															<DropdownMenuRadioItem value="cancelled">
+																<HugeiconsIcon
+																	icon={getOrderStatusIcon('cancelled')}
+																	className="mr-2 h-4 w-4"
+																/>
+																{m.orderStatusCancelled()}
+															</DropdownMenuRadioItem>
+														)}
+													</DropdownMenuRadioGroup>
+												</DropdownMenuSubContent>
+											</DropdownMenuPortal>
+										</DropdownMenuSub>
+									)}
+									{canChangePaymentStatus && (
+										<DropdownMenuSub>
+											<DropdownMenuSubTrigger>
+												{/* TODO: replace with dedicated payment-status icon. */}
+												<HugeiconsIcon
+													icon={
+														order.paymentStatus === 'paid'
+															? CheckCircle
+															: Clock01Icon
+													}
+													className="mr-2 h-4 w-4"
+												/>
+												{currentPaymentStatus}
+											</DropdownMenuSubTrigger>
+											<DropdownMenuPortal>
+												<DropdownMenuSubContent>
+													<DropdownMenuRadioGroup
+														value={order.paymentStatus}
+														onValueChange={(value) => {
+															if (value !== order.paymentStatus) {
+																onPaymentStatusChange(
+																	order,
+																	value as OrderPaymentStatus,
+																);
+															}
+														}}
+													>
+														<DropdownMenuRadioItem value="pending">
+															{/* TODO: replace with dedicated payment-status icon. */}
+															<HugeiconsIcon
+																icon={Clock01Icon}
+																className="mr-2 h-4 w-4"
+															/>
+															{m.orderPaymentStatusPending()}
+														</DropdownMenuRadioItem>
+														<DropdownMenuRadioItem value="paid">
+															{/* TODO: replace with dedicated payment-status icon. */}
+															<HugeiconsIcon
+																icon={CheckCircle}
+																className="mr-2 h-4 w-4"
+															/>
+															{m.orderPaymentStatusPaid()}
 														</DropdownMenuRadioItem>
 													</DropdownMenuRadioGroup>
 												</DropdownMenuSubContent>

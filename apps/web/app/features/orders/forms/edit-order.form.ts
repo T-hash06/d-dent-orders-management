@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-form';
 import * as z from 'zod';
 import { m } from '@/features/i18n/paraglide/messages';
+import { ORDER_PAYMENT_STATUS_VALUES } from '@/features/orders/domain/order-payment-status';
 import { ORDER_STATUS_VALUES } from '@/features/orders/domain/order-status';
 
 export const { fieldContext, formContext } = createFormHookContexts();
@@ -13,6 +14,7 @@ const orderItemFormState = z.object({
 	productId: z.string(),
 	quantity: z.string(),
 	price: z.string(),
+	details: z.string(),
 });
 
 const editOrderFormState = z.object({
@@ -21,6 +23,7 @@ const editOrderFormState = z.object({
 	deliveryAddress: z.string(),
 	expectedDeliveryAt: z.date(),
 	status: z.string().nullable(),
+	paymentStatus: z.string().nullable(),
 	items: z.array(orderItemFormState),
 });
 
@@ -38,6 +41,9 @@ export const editOrderFormSchema = z.object({
 	status: z.enum(ORDER_STATUS_VALUES, {
 		error: m.editOrderStatusRequired(),
 	}),
+	paymentStatus: z.enum(ORDER_PAYMENT_STATUS_VALUES, {
+		error: m.editOrderPaymentStatusRequired(),
+	}),
 	items: z
 		.array(
 			z.object({
@@ -50,6 +56,7 @@ export const editOrderFormSchema = z.object({
 				price: z.coerce.number<string>().min(1, {
 					error: m.editOrderItemPriceInvalid(),
 				}),
+				details: z.string(),
 			}),
 		)
 		.min(1, { error: m.editOrderItemsRequired() }),
@@ -61,7 +68,13 @@ export function editOrderFormOptions(defaultValues: {
 	deliveryAddress: string;
 	expectedDeliveryAt: Date;
 	status: string | null;
-	items: { productId: string; quantity: number; price: number }[];
+	paymentStatus: string | null;
+	items: {
+		productId: string;
+		quantity: number;
+		price: number;
+		details: string;
+	}[];
 }) {
 	return formOptions({
 		defaultValues: {
@@ -70,10 +83,12 @@ export function editOrderFormOptions(defaultValues: {
 			deliveryAddress: defaultValues.deliveryAddress,
 			expectedDeliveryAt: new Date(defaultValues.expectedDeliveryAt),
 			status: defaultValues.status,
+			paymentStatus: defaultValues.paymentStatus,
 			items: defaultValues.items.map((item) => ({
 				productId: item.productId,
 				quantity: String(item.quantity),
 				price: String(item.price),
+				details: item.details,
 			})),
 		} satisfies z.infer<typeof editOrderFormState>,
 		validators: {

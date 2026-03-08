@@ -4,6 +4,7 @@ import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { users } from '@/features/.server/auth/better-auth.schema';
 import { customers } from '@/features/.server/customers/customer.schema';
 import { products } from '@/features/.server/products/product.schema';
+import { ORDER_PAYMENT_STATUS_VALUES } from '@/features/orders/domain/order-payment-status';
 import { ORDER_STATUS_VALUES } from '@/features/orders/domain/order-status';
 
 export const orders = sqliteTable('orders', {
@@ -19,6 +20,11 @@ export const orders = sqliteTable('orders', {
 	}).notNull(),
 	status: text('status', {
 		enum: ORDER_STATUS_VALUES,
+	})
+		.notNull()
+		.default('pending'),
+	paymentStatus: text('payment_status', {
+		enum: ORDER_PAYMENT_STATUS_VALUES,
 	})
 		.notNull()
 		.default('pending'),
@@ -52,6 +58,7 @@ export const orderItems = sqliteTable('order_items', {
 		.references(() => products.id),
 	quantity: integer('quantity').notNull(),
 	price: real('price').notNull(),
+	details: text('details').notNull().default(''),
 	createdAt: integer('created_at', { mode: 'timestamp_ms' })
 		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 		.notNull(),

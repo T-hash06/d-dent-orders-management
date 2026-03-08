@@ -1,3 +1,4 @@
+import { getAnalyticsCapabilities } from '@/features/.server/analytics/get-analytics-capabilities.query';
 import { createCustomer } from '@/features/.server/customers/create-customer.mutation';
 import { deleteCustomer } from '@/features/.server/customers/delete-customer.mutation';
 import { getCustomerById } from '@/features/.server/customers/get-customer-by-id.query';
@@ -11,6 +12,7 @@ import { getHomeOverview } from '@/features/.server/orders/get-home-overview.que
 import { getOrderById } from '@/features/.server/orders/get-order-by-id.query';
 import { getOrders } from '@/features/.server/orders/get-orders.query';
 import { updateOrder } from '@/features/.server/orders/update-order.mutation';
+import { updateOrderPaymentStatus } from '@/features/.server/orders/update-order-payment-status.mutation';
 import { updateOrderStatus } from '@/features/.server/orders/update-order-status.mutation';
 import { createProduct } from '@/features/.server/products/create-product.mutation';
 import { deleteProduct } from '@/features/.server/products/delete-product.mutation';
@@ -52,6 +54,7 @@ const orders = t.router({
 	createOrder,
 	updateOrder,
 	updateOrderStatus,
+	updateOrderPaymentStatus,
 	deleteOrder,
 
 	completeOrder,
@@ -67,11 +70,16 @@ const users = t.router({
 	setUserBanStatus,
 });
 
+const analytics = t.router({
+	getAnalyticsCapabilities,
+});
+
 export const appRouter = t.router({
 	customers,
 	products,
 	orders,
 	users,
+	analytics,
 });
 
 export type AppRouter = typeof appRouter;

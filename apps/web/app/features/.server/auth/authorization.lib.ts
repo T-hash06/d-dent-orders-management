@@ -19,6 +19,8 @@ export type OrderActions = {
 	canEdit: boolean;
 	canDelete: boolean;
 	canUpdateStatus: boolean;
+	canCancelOrder: boolean;
+	canUpdatePaymentStatus: boolean;
 	canAssign: boolean;
 	editableFields: {
 		canEditCustomerId: boolean;
@@ -26,9 +28,12 @@ export type OrderActions = {
 		canEditDeliveryAddress: boolean;
 		canEditExpectedDeliveryAt: boolean;
 		canEditStatus: boolean;
+		canCancelOrder: boolean;
+		canEditPaymentStatus: boolean;
 		canEditItemProductId: boolean;
 		canEditItemQuantity: boolean;
 		canEditItemPrice: boolean;
+		canEditItemDetails: boolean;
 		canAddItems: boolean;
 		canRemoveItems: boolean;
 	};
@@ -44,6 +49,63 @@ export type UserActions = {
 export type EntityActions = {
 	canEdit: boolean;
 	canDelete: boolean;
+};
+
+export const ANALYTICS_GROUP_VALUES = [
+	'overview',
+	'orders-performance',
+	'customers-insights',
+	'products-insights',
+	'revenue',
+	'operations',
+	'team-performance',
+] as const;
+
+export type AnalyticsGroup = (typeof ANALYTICS_GROUP_VALUES)[number];
+export type AnalyticsScope = 'all' | 'assigned';
+export type AnalyticsCapabilities = {
+	canList: boolean;
+	groups: {
+		[Group in AnalyticsGroup]: {
+			all: boolean;
+			assigned: boolean;
+		};
+	};
+};
+
+const ANALYTICS_ACTION_BY_GROUP: {
+	[Group in AnalyticsGroup]: {
+		[Scope in AnalyticsScope]: PermissionAction<'analytics'>;
+	};
+} = {
+	overview: {
+		all: 'overview-all',
+		assigned: 'overview-assigned',
+	},
+	'orders-performance': {
+		all: 'orders-performance-all',
+		assigned: 'orders-performance-assigned',
+	},
+	'customers-insights': {
+		all: 'customers-insights-all',
+		assigned: 'customers-insights-assigned',
+	},
+	'products-insights': {
+		all: 'products-insights-all',
+		assigned: 'products-insights-assigned',
+	},
+	revenue: {
+		all: 'revenue-all',
+		assigned: 'revenue-assigned',
+	},
+	operations: {
+		all: 'operations-all',
+		assigned: 'operations-assigned',
+	},
+	'team-performance': {
+		all: 'team-performance-all',
+		assigned: 'team-performance-assigned',
+	},
 };
 
 export function forbiddenError() {
@@ -108,6 +170,34 @@ export const canReadAssignedProducts = (source: Permissions) =>
 export const canListUsers = (source: Permissions) =>
 	hasPermission(source, { user: ['list'] });
 
+export const canListAnalytics = (source: Permissions) =>
+	hasPermission(source, { analytics: ['list'] });
+
+export const canAccessAnalyticsGroup = (
+	source: Permissions,
+	group: AnalyticsGroup,
+	scope: AnalyticsScope,
+) =>
+	hasPermission(source, {
+		analytics: [ANALYTICS_ACTION_BY_GROUP[group][scope]],
+	});
+
+export const buildAnalyticsCapabilities = (
+	source: Permissions,
+): AnalyticsCapabilities => ({
+	canList: canListAnalytics(source),
+	groups: ANALYTICS_GROUP_VALUES.reduce(
+		(acc, group) => {
+			acc[group] = {
+				all: canAccessAnalyticsGroup(source, group, 'all'),
+				assigned: canAccessAnalyticsGroup(source, group, 'assigned'),
+			};
+			return acc;
+		},
+		{} as AnalyticsCapabilities['groups'],
+	),
+});
+
 export const canBeAssignedOrder = (source: Permissions) =>
 	hasAnyPermission(source, [
 		{ orders: ['list-assigned'] },
@@ -138,15 +228,26 @@ export const buildOrderActions = ({
 	const canUpdateAssignedOrderFields =
 		assignedToCurrentUser &&
 		hasPermission(permissions, { orders: ['update-assigned'] });
+	const canUpdateItemDetails =
+		hasPermission(permissions, { orders: ['update-item-details-all'] }) ||
+		(assignedToCurrentUser &&
+			hasPermission(permissions, { orders: ['update-item-details-assigned'] }));
 	const canUpdateStatus =
 		hasPermission(permissions, { orders: ['update-status-all'] }) ||
 		(assignedToCurrentUser &&
 			hasPermission(permissions, { orders: ['update-status-assigned'] }));
+	const canCancelOrder = hasPermission(permissions, { orders: ['cancel'] });
+	const canUpdatePaymentStatus = hasPermission(permissions, {
+		orders: ['update-payment-status'],
+	});
 	const canAssign =
 		hasPermission(permissions, { orders: ['assign-all'] }) ||
 		(assignedToCurrentUser &&
 			hasPermission(permissions, { orders: ['assign-assigned'] }));
-	const canEdit = canUpdateAllOrderFields || canUpdateAssignedOrderFields;
+	const canEdit =
+		canUpdateAllOrderFields ||
+		canUpdateAssignedOrderFields ||
+		canUpdateItemDetails;
 	const editableFields = canUpdateAllOrderFields
 		? {
 				canEditCustomerId: true,
@@ -154,9 +255,12 @@ export const buildOrderActions = ({
 				canEditDeliveryAddress: true,
 				canEditExpectedDeliveryAt: true,
 				canEditStatus: true,
+				canCancelOrder,
+				canEditPaymentStatus: canUpdatePaymentStatus,
 				canEditItemProductId: true,
 				canEditItemQuantity: true,
 				canEditItemPrice: true,
+				canEditItemDetails: true,
 				canAddItems: true,
 				canRemoveItems: true,
 			}
@@ -167,9 +271,12 @@ export const buildOrderActions = ({
 					canEditDeliveryAddress: false,
 					canEditExpectedDeliveryAt: false,
 					canEditStatus: canUpdateStatus,
+					canCancelOrder,
+					canEditPaymentStatus: canUpdatePaymentStatus,
 					canEditItemProductId: false,
 					canEditItemQuantity: true,
 					canEditItemPrice: false,
+					canEditItemDetails: canUpdateItemDetails,
 					canAddItems: false,
 					canRemoveItems: false,
 				}
@@ -178,10 +285,13 @@ export const buildOrderActions = ({
 					canEditAssignedToUserId: false,
 					canEditDeliveryAddress: false,
 					canEditExpectedDeliveryAt: false,
-					canEditStatus: canUpdateStatus,
+					canEditStatus: false,
+					canCancelOrder,
+					canEditPaymentStatus: canUpdatePaymentStatus,
 					canEditItemProductId: false,
 					canEditItemQuantity: false,
 					canEditItemPrice: false,
+					canEditItemDetails: canUpdateItemDetails,
 					canAddItems: false,
 					canRemoveItems: false,
 				};
@@ -190,6 +300,8 @@ export const buildOrderActions = ({
 		canEdit,
 		canDelete: hasPermission(permissions, { orders: ['delete'] }),
 		canUpdateStatus,
+		canCancelOrder,
+		canUpdatePaymentStatus,
 		canAssign,
 		editableFields,
 	};
