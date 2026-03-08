@@ -27,13 +27,13 @@ import type {
 import { m } from '@/features/i18n/paraglide/messages';
 import { CategoryComboboxField } from '@/features/products/components/fields/category-combobox-field';
 import {
-	CREATE_PRODUCT_FORM_OPTIONS,
-	useAppForm,
-} from '@/features/products/forms/create-product.form';
-import {
 	getNewCategoryName,
 	isNewCategory,
 } from '@/features/products/domain/product-category';
+import {
+	CREATE_PRODUCT_FORM_OPTIONS,
+	useAppForm,
+} from '@/features/products/forms/create-product.form';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 const emptyProductCategoriesFallback: ProductCategory[] = [];

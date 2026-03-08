@@ -198,13 +198,6 @@ export default function LoginRoute() {
 					>
 						{m.loginWithGoogle()}
 					</Button>
-
-					<div className="pt-2 text-center text-sm">
-						{m.noAccount()}{' '}
-						<UiLink render={<Link to={localizeHref('/auth/register')} />}>
-							{m.registerHere()}
-						</UiLink>
-					</div>
 				</CardFooter>
 			</Card>
 

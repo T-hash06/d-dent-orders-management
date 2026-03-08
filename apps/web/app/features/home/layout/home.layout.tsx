@@ -36,6 +36,7 @@ import {
 	PackageDeliveredIcon,
 	PackageIcon,
 	Sun,
+	UserGroupIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useQuery } from '@tanstack/react-query';
@@ -175,7 +176,8 @@ function HomeSidebar() {
 	const isProducts = normalizedPath.startsWith('/products');
 	const isOrders = normalizedPath.startsWith('/orders');
 	const isCustomers = normalizedPath.startsWith('/customers');
-	const isHome = !isProducts && !isOrders && !isCustomers;
+	const isUsers = normalizedPath.startsWith('/users');
+	const isHome = !isProducts && !isOrders && !isCustomers && !isUsers;
 
 	const trpc = useTRPC();
 	const { data: homeOverview } = useQuery(
@@ -278,6 +280,21 @@ function HomeSidebar() {
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 						)}
+
+						{session.permissions.user.includes('list') && (
+							<SidebarMenuItem>
+								<SidebarMenuButton
+									render={<Link to={localizeHref('/users')} />}
+									className="transition-colors"
+									isActive={isUsers}
+									tooltip={m.navUsers()}
+									nativeButton={false}
+								>
+									<HugeiconsIcon icon={UserGroupIcon} className="size-4" />
+									<span>{m.navUsers()}</span>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+						)}
 					</SidebarMenu>
 				</SidebarGroup>
 			</SidebarContent>
@@ -301,6 +318,7 @@ function HomeInset() {
 	const isProducts = normalizedPath.startsWith('/products');
 	const isOrders = normalizedPath.startsWith('/orders');
 	const isCustomers = normalizedPath.startsWith('/customers');
+	const isUsers = normalizedPath.startsWith('/users');
 
 	const headerTitle = isProducts
 		? m.productsTitle()
@@ -308,7 +326,9 @@ function HomeInset() {
 			? m.ordersTitle()
 			: isCustomers
 				? m.customersTitle()
-				: m.homePageTitle();
+				: isUsers
+					? m.usersTitle()
+					: m.homePageTitle();
 
 	const headerDescription = isProducts
 		? m.productsDescription()
@@ -316,7 +336,9 @@ function HomeInset() {
 			? m.ordersDescription()
 			: isCustomers
 				? m.customersDescription()
-				: m.homePageDescription();
+				: isUsers
+					? m.usersDescription()
+					: m.homePageDescription();
 
 	return (
 		<SidebarInset>

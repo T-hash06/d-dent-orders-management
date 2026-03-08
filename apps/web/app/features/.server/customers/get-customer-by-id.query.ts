@@ -31,16 +31,18 @@ export const getCustomerById = procedures.auth
 			{ customers: ['list-all'] },
 			{ customers: ['list-assigned'] },
 		]);
-		const canUpdateCustomers = hasPermission(ctx.permissions, { customers: ['update'] });
-		const canDeleteCustomers = hasPermission(ctx.permissions, { customers: ['delete'] });
+		const canUpdateCustomers = hasPermission(ctx.permissions, {
+			customers: ['update'],
+		});
+		const canDeleteCustomers = hasPermission(ctx.permissions, {
+			customers: ['delete'],
+		});
 		const shouldScopeToAssigned =
-			!canReadAllCustomers(ctx.permissions) && canReadAssignedCustomers(ctx.permissions);
+			!canReadAllCustomers(ctx.permissions) &&
+			canReadAssignedCustomers(ctx.permissions);
 
 		const [customer] = !shouldScopeToAssigned
-			? await db
-					.select()
-					.from(customers)
-					.where(eq(customers.id, input.id))
+			? await db.select().from(customers).where(eq(customers.id, input.id))
 			: await db
 					.select({
 						id: customers.id,

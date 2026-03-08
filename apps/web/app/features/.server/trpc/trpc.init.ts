@@ -15,6 +15,7 @@ export const createTRPCContext = async (ctx: FetchCreateContextFnOptions) => {
 	const permissions = getPermissionsByRole(session?.user.role);
 
 	return {
+		headers: ctx.req.headers,
 		session: session?.session,
 		user: session?.user,
 		permissions,
@@ -126,6 +127,7 @@ const authProcedure = publicProcedure.use(({ ctx, next }) => {
 
 	return next({
 		ctx: {
+			headers: ctx.headers,
 			session: ctx.session,
 			user: ctx.user,
 			permissions: ctx.permissions,

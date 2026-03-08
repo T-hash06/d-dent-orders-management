@@ -24,15 +24,15 @@ import type {
 import { m } from '@/features/i18n/paraglide/messages';
 import { CategoryComboboxField } from '@/features/products/components/fields/category-combobox-field';
 import {
-	editProductFormOptions,
-	useAppForm,
-} from '@/features/products/forms/edit-product.form';
-import {
 	getNewCategoryName,
 	getProductCategoryId,
 	getProductCategoryLabel,
 	isNewCategory,
 } from '@/features/products/domain/product-category';
+import {
+	editProductFormOptions,
+	useAppForm,
+} from '@/features/products/forms/edit-product.form';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 type EditProductDialogProps = {

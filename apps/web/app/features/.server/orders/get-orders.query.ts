@@ -32,7 +32,8 @@ export const getOrders = procedures.auth
 			{ orders: ['list-assigned'] },
 		]);
 		const shouldScopeToAssigned =
-			!canReadAllOrders(ctx.permissions) && canReadAssignedOrders(ctx.permissions);
+			!canReadAllOrders(ctx.permissions) &&
+			canReadAssignedOrders(ctx.permissions);
 
 		const ordersRows = await db
 			.select()

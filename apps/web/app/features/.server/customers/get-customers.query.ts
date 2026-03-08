@@ -16,10 +16,15 @@ export const getCustomers = procedures.auth.query(async ({ ctx }) => {
 		{ customers: ['list-all'] },
 		{ customers: ['list-assigned'] },
 	]);
-	const canUpdateCustomers = hasPermission(ctx.permissions, { customers: ['update'] });
-	const canDeleteCustomers = hasPermission(ctx.permissions, { customers: ['delete'] });
+	const canUpdateCustomers = hasPermission(ctx.permissions, {
+		customers: ['update'],
+	});
+	const canDeleteCustomers = hasPermission(ctx.permissions, {
+		customers: ['delete'],
+	});
 	const shouldScopeToAssigned =
-		!canReadAllCustomers(ctx.permissions) && canReadAssignedCustomers(ctx.permissions);
+		!canReadAllCustomers(ctx.permissions) &&
+		canReadAssignedCustomers(ctx.permissions);
 
 	const rows = !shouldScopeToAssigned
 		? await db.select().from(customers)

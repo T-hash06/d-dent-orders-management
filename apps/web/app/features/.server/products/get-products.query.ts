@@ -28,13 +28,18 @@ export const getProducts = procedures.auth
 			{ products: ['list-all'] },
 			{ products: ['list-assigned'] },
 		]);
-		const canUpdateProducts = hasPermission(ctx.permissions, { products: ['update'] });
-		const canDeleteProducts = hasPermission(ctx.permissions, { products: ['delete'] });
+		const canUpdateProducts = hasPermission(ctx.permissions, {
+			products: ['update'],
+		});
+		const canDeleteProducts = hasPermission(ctx.permissions, {
+			products: ['delete'],
+		});
 
 		const categoryId = input?.categoryId;
 		const search = input?.search;
 		const inAssignedOrderScope =
-			!canReadAllProducts(ctx.permissions) && canReadAssignedProducts(ctx.permissions)
+			!canReadAllProducts(ctx.permissions) &&
+			canReadAssignedProducts(ctx.permissions)
 				? sql`EXISTS (
 				SELECT 1
 				FROM order_items oi

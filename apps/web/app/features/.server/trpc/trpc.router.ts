@@ -19,7 +19,13 @@ import { getProductCategories } from '@/features/.server/products/get-product-ca
 import { getProducts } from '@/features/.server/products/get-products.query';
 import { updateProduct } from '@/features/.server/products/update-product.mutation';
 import { t } from '@/features/.server/trpc/trpc.init';
+import { createUser } from '@/features/.server/users/create-user.mutation';
+import { deleteUser } from '@/features/.server/users/delete-user.mutation';
 import { getAssignableUsers } from '@/features/.server/users/get-assignable-users.query';
+import { getUsers } from '@/features/.server/users/get-users.query';
+import { setUserBanStatus } from '@/features/.server/users/set-user-ban-status.mutation';
+import { setUserRole } from '@/features/.server/users/set-user-role.mutation';
+import { updateUser } from '@/features/.server/users/update-user.mutation';
 
 const customers = t.router({
 	getCustomers,
@@ -53,6 +59,12 @@ const orders = t.router({
 
 const users = t.router({
 	getAssignableUsers,
+	getUsers,
+	createUser,
+	updateUser,
+	deleteUser,
+	setUserRole,
+	setUserBanStatus,
 });
 
 export const appRouter = t.router({

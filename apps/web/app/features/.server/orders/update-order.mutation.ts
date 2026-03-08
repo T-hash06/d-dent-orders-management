@@ -216,10 +216,15 @@ function isAssignedUpdaterAllowedItemsUpdate({
 		return false;
 	}
 
-	const currentMap = new Map(currentItems.map((item) => [item.productId, item]));
+	const currentMap = new Map(
+		currentItems.map((item) => [item.productId, item]),
+	);
 	const nextMap = new Map(nextItems.map((item) => [item.productId, item]));
 
-	if (currentMap.size !== currentItems.length || nextMap.size !== nextItems.length) {
+	if (
+		currentMap.size !== currentItems.length ||
+		nextMap.size !== nextItems.length
+	) {
 		return false;
 	}
 

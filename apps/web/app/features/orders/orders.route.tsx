@@ -149,7 +149,9 @@ const OrdersRouteHeader = () => {
 			title={m.ordersTitle()}
 			description={m.ordersDescription()}
 			action={
-				permissions.orders.includes('create') ? <CreateOrderDialog /> : undefined
+				permissions.orders.includes('create') ? (
+					<CreateOrderDialog />
+				) : undefined
 			}
 		/>
 	);
@@ -269,7 +271,9 @@ const OrdersRouteTable = () => {
 					getOrdersQueryKey,
 					(old: Order[] | undefined) =>
 						(old ?? []).map((o) =>
-							o.id === variables.orderId ? { ...o, status: variables.status } : o,
+							o.id === variables.orderId
+								? { ...o, status: variables.status }
+								: o,
 						),
 				);
 

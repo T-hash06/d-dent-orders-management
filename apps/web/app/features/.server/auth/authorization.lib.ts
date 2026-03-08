@@ -22,6 +22,13 @@ export type OrderActions = {
 	canAssign: boolean;
 };
 
+export type UserActions = {
+	canEdit: boolean;
+	canDelete: boolean;
+	canSetRole: boolean;
+	canBan: boolean;
+};
+
 export type EntityActions = {
 	canEdit: boolean;
 	canDelete: boolean;
@@ -86,6 +93,9 @@ export const canReadAllProducts = (source: Permissions) =>
 export const canReadAssignedProducts = (source: Permissions) =>
 	hasPermission(source, { products: ['list-assigned'] });
 
+export const canListUsers = (source: Permissions) =>
+	hasPermission(source, { user: ['list'] });
+
 export const canBeAssignedOrder = (source: Permissions) =>
 	hasAnyPermission(source, [
 		{ orders: ['list-assigned'] },
@@ -128,6 +138,28 @@ export const buildOrderActions = ({
 		canDelete: hasPermission(permissions, { orders: ['delete'] }),
 		canUpdateStatus,
 		canAssign,
+	};
+};
+
+export const buildUserActions = ({
+	permissions,
+	currentUserId,
+	targetUserId,
+}: {
+	permissions: Permissions;
+	currentUserId: string;
+	targetUserId: string;
+}): UserActions => {
+	const isCurrentUser = currentUserId === targetUserId;
+	const canUpdateUsers = hasPermission(permissions, { user: ['update'] });
+	const canDeleteUsers = hasPermission(permissions, { user: ['delete'] });
+
+	return {
+		canEdit: canUpdateUsers,
+		canDelete: !isCurrentUser && canDeleteUsers,
+		canSetRole:
+			!isCurrentUser && hasPermission(permissions, { user: ['set-role'] }),
+		canBan: !isCurrentUser && hasPermission(permissions, { user: ['ban'] }),
 	};
 };
 
