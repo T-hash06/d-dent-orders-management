@@ -57,11 +57,11 @@ import { StatBar } from '@/components/ui/stat-bar';
 import type { Order } from '@/features/.server/orders/order.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import { getLocale } from '@/features/i18n/paraglide/runtime';
-import { CreateOrderDialog } from '@/features/orders/create-order-dialog';
-import { DeleteOrderDialog } from '@/features/orders/delete-order-dialog';
-import { EditOrderDialog } from '@/features/orders/edit-order-dialog';
-import type { OrderStatus } from '@/features/orders/order-status';
-import { getOrderColumns } from '@/features/orders/orders.columns';
+import { CreateOrderDialog } from '@/features/orders/components/dialogs/create-order-dialog';
+import { DeleteOrderDialog } from '@/features/orders/components/dialogs/delete-order-dialog';
+import { EditOrderDialog } from '@/features/orders/components/dialogs/edit-order-dialog';
+import { getOrderColumns } from '@/features/orders/components/table/orders.columns';
+import type { OrderStatus } from '@/features/orders/domain/order-status';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 interface OrderStoreState {

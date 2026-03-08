@@ -5,7 +5,7 @@ import {
 } from '@tanstack/react-form';
 import * as z from 'zod';
 import { m } from '@/features/i18n/paraglide/messages';
-import { ORDER_STATUS_VALUES } from '@/features/orders/order-status';
+import { ORDER_STATUS_VALUES } from '@/features/orders/domain/order-status';
 
 export const { fieldContext, formContext } = createFormHookContexts();
 

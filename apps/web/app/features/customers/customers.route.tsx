@@ -40,10 +40,10 @@ import { useShallow } from 'zustand/react/shallow';
 import { PageHeader } from '@/components/layout/page-header';
 import { StatBar } from '@/components/ui/stat-bar';
 import type { Customer } from '@/features/.server/customers/customer.types';
-import { CreateCustomerDialog } from '@/features/customers/create-customer-dialog';
-import { getCustomerColumns } from '@/features/customers/customers.columns';
-import { DeleteCustomerDialog } from '@/features/customers/delete-customer-dialog';
-import { EditCustomerDialog } from '@/features/customers/edit-customer-dialog';
+import { CreateCustomerDialog } from '@/features/customers/components/dialogs/create-customer-dialog';
+import { DeleteCustomerDialog } from '@/features/customers/components/dialogs/delete-customer-dialog';
+import { EditCustomerDialog } from '@/features/customers/components/dialogs/edit-customer-dialog';
+import { getCustomerColumns } from '@/features/customers/components/table/customers.columns';
 import { m } from '@/features/i18n/paraglide/messages';
 import { useTRPC } from '@/features/trpc/trpc.context';
 

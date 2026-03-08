@@ -7,7 +7,7 @@ import { procedures } from '@/features/.server/trpc/trpc.init';
 import {
 	isOrderLate,
 	ORDER_STATUS_VALUES,
-} from '@/features/orders/order-status';
+} from '@/features/orders/domain/order-status';
 
 const getOrdersInput = z
 	.object({

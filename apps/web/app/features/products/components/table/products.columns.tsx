@@ -21,7 +21,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ProductPreview } from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
-import { getProductCategoryLabel } from '@/features/products/product-category';
+import { getProductCategoryLabel } from '@/features/products/domain/product-category';
 
 type ProductColumnsProps = {
 	onEdit: (product: ProductPreview) => void;

@@ -21,7 +21,7 @@ import {
 	getNewCategoryName,
 	isNewCategory,
 	NEW_CATEGORY_PREFIX,
-} from '@/features/products/product-category';
+} from '@/features/products/domain/product-category';
 
 type CategoryComboboxFieldProps = {
 	id?: string;

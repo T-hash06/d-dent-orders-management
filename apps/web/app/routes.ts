@@ -8,8 +8,8 @@ import {
 
 export default [
 	...prefix(':locale?', [
-		layout('features/home/home.layout.tsx', [
-			index('features/home/home.route.tsx'),
+		layout('features/home/layout/home.layout.tsx', [
+			index('features/home/route/home.route.tsx'),
 			route('products', 'features/products/products.route.tsx'),
 			route('customers', 'features/customers/customers.route.tsx'),
 			route('orders', 'features/orders/orders.route.tsx'),

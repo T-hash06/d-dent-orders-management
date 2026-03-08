@@ -3,7 +3,7 @@ import { customers } from '@/features/.server/customers/customer.schema';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import { orderItems, orders } from '@/features/.server/orders/order.schema';
 import { procedures } from '@/features/.server/trpc/trpc.init';
-import { isOrderLate } from '@/features/orders/order-status';
+import { isOrderLate } from '@/features/orders/domain/order-status';
 
 export const getHomeOverview = procedures.auth.query(async ({ ctx }) => {
 	const allOrders = await db.select().from(orders);

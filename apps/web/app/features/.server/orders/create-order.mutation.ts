@@ -4,7 +4,7 @@ import { orderItems, orders } from '@/features/.server/orders/order.schema';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
 import { procedures } from '@/features/.server/trpc/trpc.init';
 import { m } from '@/features/i18n/paraglide/messages';
-import { ORDER_STATUS_VALUES } from '@/features/orders/order-status';
+import { ORDER_STATUS_VALUES } from '@/features/orders/domain/order-status';
 
 const createOrderItemInput = z.object({
 	productId: z

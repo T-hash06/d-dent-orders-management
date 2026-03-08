@@ -50,10 +50,10 @@ import type {
 	ProductPreview,
 } from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
-import { CreateProductDialog } from '@/features/products/create-product-dialog';
-import { DeleteProductDialog } from '@/features/products/delete-product-dialog';
-import { EditProductDialog } from '@/features/products/edit-product-dialog';
-import { getProductColumns } from '@/features/products/products.columns';
+import { CreateProductDialog } from '@/features/products/components/dialogs/create-product-dialog';
+import { DeleteProductDialog } from '@/features/products/components/dialogs/delete-product-dialog';
+import { EditProductDialog } from '@/features/products/components/dialogs/edit-product-dialog';
+import { getProductColumns } from '@/features/products/components/table/products.columns';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 interface ProductStoreState {

@@ -7,6 +7,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	DialogTrigger,
 	Field,
 	FieldError,
 	FieldGroup,
@@ -15,49 +16,76 @@ import {
 	Spinner,
 	toast,
 } from '@full-stack-template/ui';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { type SubmitEvent, useCallback, useEffect } from 'react';
-import type { Customer } from '@/features/.server/customers/customer.types';
-import {
-	editCustomerFormOptions,
-	useAppForm,
-} from '@/features/customers/edit-customer.form';
+import { Plus } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type SubmitEvent, useCallback, useState } from 'react';
+import type {
+	ProductCategory,
+	ProductPreview,
+} from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';
+import { CategoryComboboxField } from '@/features/products/components/fields/category-combobox-field';
+import {
+	CREATE_PRODUCT_FORM_OPTIONS,
+	useAppForm,
+} from '@/features/products/forms/create-product.form';
+import {
+	getNewCategoryName,
+	isNewCategory,
+} from '@/features/products/domain/product-category';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
-type EditCustomerDialogProps = {
-	customer: Customer | null;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-};
+const emptyProductCategoriesFallback: ProductCategory[] = [];
 
-export function EditCustomerDialog({
-	customer,
-	open,
-	onOpenChange,
-}: EditCustomerDialogProps) {
+export function CreateProductDialog() {
+	const [open, setOpen] = useState(false);
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
+	const { data: productCategories = emptyProductCategoriesFallback } = useQuery(
+		trpc.products.getProductCategories.queryOptions(),
+	);
 
-	const updateMutation = useMutation(
-		trpc.customers.updateCustomer.mutationOptions({
+	const createMutation = useMutation(
+		trpc.products.createProduct.mutationOptions({
 			onMutate: async (variables) => {
 				await queryClient.cancelQueries({
-					queryKey: trpc.customers.getCustomers.queryKey(),
+					queryKey: trpc.products.getProducts.queryKey(),
 				});
 
 				const previous = queryClient.getQueryData(
-					trpc.customers.getCustomers.queryKey(),
+					trpc.products.getProducts.queryKey(),
 				);
 
 				queryClient.setQueryData(
-					trpc.customers.getCustomers.queryKey(),
-					(old: Customer[] | undefined) =>
-						(old ?? []).map((c) =>
-							c.id === variables.id
-								? { ...c, ...variables, updatedAt: new Date() }
-								: c,
-						),
+					trpc.products.getProducts.queryKey(),
+					(old: ProductPreview[] | undefined) => {
+						const categoryName = isNewCategory(variables.categoryId)
+							? getNewCategoryName(variables.categoryId)
+							: (productCategories.find(
+									(category) => category.id === variables.categoryId,
+								)?.name ?? '');
+
+						return [
+							...(old ?? []),
+							{
+								id: `temp-${Date.now()}`,
+								hasPendingOrders: true,
+								name: variables.name,
+								categoryId: variables.categoryId,
+								category: {
+									id: variables.categoryId,
+									name: categoryName,
+								},
+								variant: variables.variant,
+								price: variables.price,
+								createdAt: new Date(),
+								updatedAt: new Date(),
+								createdById: 'temp',
+								updatedById: 'temp',
+							} satisfies ProductPreview,
+						];
+					},
 				);
 
 				return { previous };
@@ -65,52 +93,43 @@ export function EditCustomerDialog({
 			onError: (_error, _variables, context) => {
 				if (context?.previous) {
 					queryClient.setQueryData(
-						trpc.customers.getCustomers.queryKey(),
+						trpc.products.getProducts.queryKey(),
 						context.previous,
 					);
 				}
-				toast.error(m.editCustomerFailed());
+				toast.error(m.createProductFailed());
 			},
 			onSuccess: () => {
-				toast.success(m.editCustomerSuccess());
+				toast.success(m.createProductSuccess());
 				queryClient.invalidateQueries({
-					queryKey: trpc.customers.getCustomers.queryKey(),
+					queryKey: trpc.products.getProducts.queryKey(),
 				});
-				onOpenChange(false);
+				queryClient.invalidateQueries({
+					queryKey: trpc.products.getProductCategories.queryKey(),
+				});
+				form.reset();
+				setOpen(false);
 			},
 		}),
 	);
 
 	const form = useAppForm({
-		...editCustomerFormOptions({
-			name: customer?.name ?? '',
-			identifier: customer?.identifier ?? '',
-			phone: customer?.phone ?? '',
-			address: customer?.address ?? '',
-		}),
+		...CREATE_PRODUCT_FORM_OPTIONS,
 		onSubmit: async ({ value }) => {
-			if (!customer) return;
-			updateMutation.mutate({
-				id: customer.id,
+			const categoryId = value.categoryId.trim();
+			if (!categoryId) {
+				toast.error(m.createProductCategoryRequired());
+				return;
+			}
+
+			createMutation.mutate({
 				name: value.name,
-				identifier: value.identifier,
-				phone: value.phone,
-				address: value.address,
+				categoryId,
+				variant: value.variant,
+				price: Number(value.price),
 			});
 		},
 	});
-
-	// Reset form when customer changes
-	useEffect(() => {
-		if (customer) {
-			form.reset({
-				name: customer.name,
-				identifier: customer.identifier,
-				phone: customer.phone,
-				address: customer.address,
-			});
-		}
-	}, [customer, form]);
 
 	const handleSubmit = useCallback(
 		async (event: SubmitEvent) => {
@@ -120,18 +139,52 @@ export function EditCustomerDialog({
 		[form],
 	);
 
-	const isLoading = updateMutation.isPending;
+	const isLoading = createMutation.isPending;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={setOpen}>
+			<DialogTrigger
+				render={
+					<Button size="sm" className="gap-2 h-8 px-3">
+						<HugeiconsIcon icon={Plus} className="h-4 w-4" />
+						<span className="hidden sm:inline">{m.createProductButton()}</span>
+						<span className="sm:hidden">{m.createProductButtonShort()}</span>
+					</Button>
+				}
+			/>
+
 			<DialogContent className="max-h-dvh overflow-y-auto sm:max-w-md">
 				<DialogHeader className="gap-1">
-					<DialogTitle>{m.editCustomerTitle()}</DialogTitle>
-					<DialogDescription>{m.editCustomerDescription()}</DialogDescription>
+					<DialogTitle>{m.createProductTitle()}</DialogTitle>
+					<DialogDescription>{m.createProductDescription()}</DialogDescription>
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<FieldGroup>
+						<form.Field name="categoryId">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>
+											{m.productCategory()}
+										</FieldLabel>
+										<CategoryComboboxField
+											id={field.name}
+											value={field.state.value}
+											onChange={(value) => field.handleChange(value)}
+											onBlur={() => field.handleBlur()}
+											categories={productCategories}
+											disabled={isLoading}
+											isInvalid={isInvalid}
+										/>
+										<FieldError errors={field.state.meta.errors} />
+									</Field>
+								);
+							}}
+						</form.Field>
+
 						<form.Field name="name">
 							{(field) => {
 								const isInvalid =
@@ -139,12 +192,12 @@ export function EditCustomerDialog({
 								return (
 									<Field data-invalid={isInvalid}>
 										<FieldLabel htmlFor={field.name}>
-											{m.customerName()}
+											{m.productName()}
 										</FieldLabel>
 										<Input
 											id={field.name}
 											name={field.name}
-											placeholder={m.customerNamePlaceholder()}
+											placeholder={m.productNamePlaceholder()}
 											aria-invalid={isInvalid}
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
@@ -158,19 +211,19 @@ export function EditCustomerDialog({
 							}}
 						</form.Field>
 
-						<form.Field name="identifier">
+						<form.Field name="variant">
 							{(field) => {
 								const isInvalid =
 									field.state.meta.isTouched && !field.state.meta.isValid;
 								return (
 									<Field data-invalid={isInvalid}>
 										<FieldLabel htmlFor={field.name}>
-											{m.customerIdentifier()}
+											{m.productVariant()}
 										</FieldLabel>
 										<Input
 											id={field.name}
 											name={field.name}
-											placeholder={m.customerIdentifierPlaceholder()}
+											placeholder={m.productVariantPlaceholder()}
 											aria-invalid={isInvalid}
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
@@ -183,44 +236,22 @@ export function EditCustomerDialog({
 							}}
 						</form.Field>
 
-						<form.Field name="phone">
+						<form.Field name="price">
 							{(field) => {
 								const isInvalid =
 									field.state.meta.isTouched && !field.state.meta.isValid;
 								return (
 									<Field data-invalid={isInvalid}>
 										<FieldLabel htmlFor={field.name}>
-											{m.customerPhone()}
+											{m.productPrice()}
 										</FieldLabel>
 										<Input
 											id={field.name}
 											name={field.name}
-											placeholder={m.customerPhonePlaceholder()}
-											aria-invalid={isInvalid}
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={() => field.handleBlur()}
-											disabled={isLoading}
-										/>
-										<FieldError errors={field.state.meta.errors} />
-									</Field>
-								);
-							}}
-						</form.Field>
-
-						<form.Field name="address">
-							{(field) => {
-								const isInvalid =
-									field.state.meta.isTouched && !field.state.meta.isValid;
-								return (
-									<Field data-invalid={isInvalid}>
-										<FieldLabel htmlFor={field.name}>
-											{m.customerAddress()}
-										</FieldLabel>
-										<Input
-											id={field.name}
-											name={field.name}
-											placeholder={m.customerAddressPlaceholder()}
+											type="number"
+											min="0"
+											step="50"
+											placeholder={m.productPricePlaceholder()}
 											aria-invalid={isInvalid}
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
@@ -234,7 +265,7 @@ export function EditCustomerDialog({
 						</form.Field>
 					</FieldGroup>
 
-					<DialogFooter className="gap-2 pt-2">
+					<DialogFooter className="gap-4">
 						<DialogClose
 							render={
 								<Button type="button" variant="outline" disabled={isLoading}>
@@ -246,10 +277,10 @@ export function EditCustomerDialog({
 							{isLoading ? (
 								<>
 									<Spinner className="mr-2 h-4 w-4" />
-									{m.updatingButton()}
+									{m.creatingButton()}
 								</>
 							) : (
-								m.updateButton()
+								m.createButton()
 							)}
 						</Button>
 					</DialogFooter>

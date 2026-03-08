@@ -14,6 +14,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	DialogTrigger,
 	Field,
 	FieldError,
 	FieldGroup,
@@ -32,36 +33,26 @@ import {
 	Spinner,
 	toast,
 } from '@full-stack-template/ui';
-import { Add01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
+import { Add01Icon, Delete02Icon, Plus } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { enUS, es } from 'date-fns/locale';
-import { type SubmitEvent, useCallback, useEffect, useState } from 'react';
-import type { Order } from '@/features/.server/orders/order.types';
+import { type SubmitEvent, useCallback, useState } from 'react';
 import { m } from '@/features/i18n/paraglide/messages';
 import { getLocale } from '@/features/i18n/paraglide/runtime';
 import {
-	editOrderFormOptions,
-	editOrderFormSchema,
+	CREATE_ORDER_FORM_OPTIONS,
+	createOrderFormSchema,
 	useAppForm,
-} from '@/features/orders/edit-order.form';
+} from '@/features/orders/forms/create-order.form';
 import {
 	getOrderProductDisplayLabel,
 	getOrderProductSearchLabel,
-} from '@/features/orders/order-product-label';
+} from '@/features/orders/utils/order-product-label';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
-type EditOrderDialogProps = {
-	order: Order | null;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-};
-
-export function EditOrderDialog({
-	order,
-	open,
-	onOpenChange,
-}: EditOrderDialogProps) {
+export function CreateOrderDialog() {
+	const [open, setOpen] = useState(false);
 	const [datePickerOpen, setDatePickerOpen] = useState(false);
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
@@ -76,36 +67,27 @@ export function EditOrderDialog({
 		trpc.users.getAssignableUsers.queryOptions(),
 	);
 
-	const updateMutation = useMutation(
-		trpc.orders.updateOrder.mutationOptions({
+	const createMutation = useMutation(
+		trpc.orders.createOrder.mutationOptions({
 			onError: () => {
-				toast.error(m.editOrderFailed());
+				toast.error(m.createOrderFailed());
 			},
 			onSuccess: () => {
-				toast.success(m.editOrderSuccess());
+				toast.success(m.createOrderSuccess());
 				queryClient.invalidateQueries({
 					queryKey: trpc.orders.getOrders.queryKey(),
 				});
-				onOpenChange(false);
+				form.reset();
+				setOpen(false);
 			},
 		}),
 	);
 
 	const form = useAppForm({
-		...editOrderFormOptions({
-			customerId: order?.customerId ?? '',
-			assignedToUserId: order?.assignedToUserId ?? null,
-			deliveryAddress: order?.deliveryAddress ?? '',
-			expectedDeliveryAt: order?.expectedDeliveryAt ?? new Date(),
-			status: order?.status ?? 'pending',
-			items: order?.items ?? [{ productId: '', quantity: 1, price: 0 }],
-		}),
+		...CREATE_ORDER_FORM_OPTIONS,
 		onSubmit: async ({ value }) => {
-			if (!order) return;
-
-			const parsedValue = editOrderFormSchema.parse(value); // This should never fail since the form values are validated.
-			updateMutation.mutate({
-				id: order.id,
+			const parsedValue = createOrderFormSchema.parse(value); // This should never fail since the form values are validated.
+			createMutation.mutate({
 				customerId: parsedValue.customerId,
 				assignedToUserId: parsedValue.assignedToUserId,
 				deliveryAddress: parsedValue.deliveryAddress,
@@ -116,23 +98,6 @@ export function EditOrderDialog({
 		},
 	});
 
-	useEffect(() => {
-		if (!order) return;
-
-		form.reset({
-			customerId: order.customerId,
-			assignedToUserId: order.assignedToUserId,
-			deliveryAddress: order.deliveryAddress,
-			expectedDeliveryAt: order.expectedDeliveryAt,
-			status: order.status,
-			items: order.items.map((item) => ({
-				productId: item.productId,
-				quantity: String(item.quantity),
-				price: String(item.price),
-			})),
-		});
-	}, [order, form]);
-
 	const handleSubmit = useCallback(
 		async (event: SubmitEvent) => {
 			event.preventDefault();
@@ -141,14 +106,24 @@ export function EditOrderDialog({
 		[form],
 	);
 
-	const isLoading = updateMutation.isPending;
+	const isLoading = createMutation.isPending;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={setOpen}>
+			<DialogTrigger
+				render={
+					<Button size="sm" className="gap-2 h-8 px-3">
+						<HugeiconsIcon icon={Plus} className="h-4 w-4" />
+						<span className="hidden sm:inline">{m.createOrderButton()}</span>
+						<span className="sm:hidden">{m.createOrderButtonShort()}</span>
+					</Button>
+				}
+			/>
+
 			<DialogContent className="max-h-dvh overflow-y-auto sm:max-w-2xl">
 				<DialogHeader className="gap-1">
-					<DialogTitle>{m.editOrderTitle()}</DialogTitle>
-					<DialogDescription>{m.editOrderDescription()}</DialogDescription>
+					<DialogTitle>{m.createOrderTitle()}</DialogTitle>
+					<DialogDescription>{m.createOrderDescription()}</DialogDescription>
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
@@ -158,10 +133,7 @@ export function EditOrderDialog({
 								const isInvalid =
 									field.state.meta.isTouched && !field.state.meta.isValid;
 								const selectedCustomer =
-									customers.find(
-										(customer) => customer.id === field.state.value,
-									) ?? null;
-
+									customers.find((c) => c.id === field.state.value) || null;
 								return (
 									<Field data-invalid={isInvalid}>
 										<FieldLabel htmlFor={field.name}>
@@ -262,7 +234,6 @@ export function EditOrderDialog({
 							{(field) => {
 								const isInvalid =
 									field.state.meta.isTouched && !field.state.meta.isValid;
-
 								return (
 									<Field data-invalid={isInvalid}>
 										<FieldLabel htmlFor={field.name}>
@@ -288,7 +259,6 @@ export function EditOrderDialog({
 							{(field) => {
 								const isInvalid =
 									field.state.meta.isTouched && !field.state.meta.isValid;
-
 								return (
 									<Field data-invalid={isInvalid}>
 										<FieldLabel htmlFor={field.name}>
@@ -395,7 +365,7 @@ export function EditOrderDialog({
 								type="button"
 								variant="outline"
 								size="sm"
-								className="h-10 sm:h-7 gap-1.5 text-xs px-2"
+								className="h-9 sm:h-7 gap-1.5 text-xs px-3 sm:px-2"
 								onClick={() =>
 									form.pushFieldValue('items', {
 										productId: '',
@@ -421,9 +391,9 @@ export function EditOrderDialog({
 												// biome-ignore lint/suspicious/noArrayIndexKey: order items are positional
 												index
 											}`}
-											className="rounded-lg border border-border p-4"
+											className="rounded-lg border border-border p-4 space-y-4"
 										>
-											<div className="mb-3 flex items-center justify-between">
+											<div className="flex items-center justify-between">
 												<p className="text-xs font-medium text-muted-foreground">
 													#{index + 1}
 												</p>
@@ -432,7 +402,7 @@ export function EditOrderDialog({
 														type="button"
 														variant="ghost"
 														size="icon"
-														className="h-11 w-11 sm:h-8 sm:w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+														className="h-9 w-9 sm:h-7 sm:w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
 														onClick={() =>
 															form.removeFieldValue('items', index)
 														}
@@ -446,8 +416,8 @@ export function EditOrderDialog({
 												)}
 											</div>
 
-											<div className="grid gap-3 md:grid-cols-12 md:items-start">
-												<div className="md:col-span-7">
+											<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
+												<div className="sm:col-span-2 lg:col-span-6">
 													<form.Field name={`items[${index}].productId`}>
 														{(field) => {
 															const isInvalid =
@@ -457,8 +427,7 @@ export function EditOrderDialog({
 															const selectedProduct =
 																products.find(
 																	(product) => product.id === field.state.value,
-																) ?? null;
-
+																) || null;
 															return (
 																<Field data-invalid={isInvalid}>
 																	<FieldLabel>
@@ -467,11 +436,13 @@ export function EditOrderDialog({
 																	<div>
 																		<Combobox
 																			value={selectedProduct}
-																			onValueChange={(value) => {
-																				field.handleChange(value?.id ?? '');
+																			onValueChange={(val) => {
+																				field.handleChange(val?.id ?? '');
+																				const priceFieldName =
+																					`items[${index}].price` as const;
 																				form.setFieldValue(
-																					`items[${index}].price` as const,
-																					value ? String(value.price) : '',
+																					priceFieldName,
+																					val ? String(val.price) : '',
 																					{ dontUpdateMeta: true },
 																				);
 																			}}
@@ -521,13 +492,12 @@ export function EditOrderDialog({
 													</form.Field>
 												</div>
 
-												<div className="grid gap-3 sm:grid-cols-2 md:col-span-5">
+												<div className="lg:col-span-3">
 													<form.Field name={`items[${index}].quantity`}>
 														{(field) => {
 															const isInvalid =
 																field.state.meta.isTouched &&
 																!field.state.meta.isValid;
-
 															return (
 																<Field data-invalid={isInvalid}>
 																	<FieldLabel htmlFor={field.name}>
@@ -555,13 +525,14 @@ export function EditOrderDialog({
 															);
 														}}
 													</form.Field>
+												</div>
 
+												<div className="lg:col-span-3">
 													<form.Field name={`items[${index}].price`}>
 														{(field) => {
 															const isInvalid =
 																field.state.meta.isTouched &&
 																!field.state.meta.isValid;
-
 															return (
 																<Field data-invalid={isInvalid}>
 																	<FieldLabel htmlFor={field.name}>
@@ -610,10 +581,10 @@ export function EditOrderDialog({
 							{isLoading ? (
 								<>
 									<Spinner className="mr-2 h-4 w-4" />
-									{m.updatingButton()}
+									{m.creatingButton()}
 								</>
 							) : (
-								m.updateButton()
+								m.createButton()
 							)}
 						</Button>
 					</DialogFooter>

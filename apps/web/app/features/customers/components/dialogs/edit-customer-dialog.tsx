@@ -7,7 +7,6 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 	Field,
 	FieldError,
 	FieldGroup,
@@ -16,25 +15,32 @@ import {
 	Spinner,
 	toast,
 } from '@full-stack-template/ui';
-import { Plus } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { type SubmitEvent, useCallback, useState } from 'react';
+import { type SubmitEvent, useCallback, useEffect } from 'react';
 import type { Customer } from '@/features/.server/customers/customer.types';
 import {
-	CREATE_CUSTOMER_FORM_OPTIONS,
+	editCustomerFormOptions,
 	useAppForm,
-} from '@/features/customers/create-customer.form';
+} from '@/features/customers/forms/edit-customer.form';
 import { m } from '@/features/i18n/paraglide/messages';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
-export function CreateCustomerDialog() {
-	const [open, setOpen] = useState(false);
+type EditCustomerDialogProps = {
+	customer: Customer | null;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+};
+
+export function EditCustomerDialog({
+	customer,
+	open,
+	onOpenChange,
+}: EditCustomerDialogProps) {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
 
-	const createMutation = useMutation(
-		trpc.customers.createCustomer.mutationOptions({
+	const updateMutation = useMutation(
+		trpc.customers.updateCustomer.mutationOptions({
 			onMutate: async (variables) => {
 				await queryClient.cancelQueries({
 					queryKey: trpc.customers.getCustomers.queryKey(),
@@ -46,20 +52,12 @@ export function CreateCustomerDialog() {
 
 				queryClient.setQueryData(
 					trpc.customers.getCustomers.queryKey(),
-					(old: Customer[] | undefined) => [
-						...(old ?? []),
-						{
-							id: `temp-${Date.now()}`,
-							name: variables.name,
-							identifier: variables.identifier,
-							phone: variables.phone,
-							address: variables.address,
-							createdAt: new Date(),
-							updatedAt: new Date(),
-							createdById: 'temp',
-							updatedById: 'temp',
-						} satisfies Customer,
-					],
+					(old: Customer[] | undefined) =>
+						(old ?? []).map((c) =>
+							c.id === variables.id
+								? { ...c, ...variables, updatedAt: new Date() }
+								: c,
+						),
 				);
 
 				return { previous };
@@ -71,23 +69,29 @@ export function CreateCustomerDialog() {
 						context.previous,
 					);
 				}
-				toast.error(m.createCustomerFailed());
+				toast.error(m.editCustomerFailed());
 			},
 			onSuccess: () => {
-				toast.success(m.createCustomerSuccess());
+				toast.success(m.editCustomerSuccess());
 				queryClient.invalidateQueries({
 					queryKey: trpc.customers.getCustomers.queryKey(),
 				});
-				form.reset();
-				setOpen(false);
+				onOpenChange(false);
 			},
 		}),
 	);
 
 	const form = useAppForm({
-		...CREATE_CUSTOMER_FORM_OPTIONS,
+		...editCustomerFormOptions({
+			name: customer?.name ?? '',
+			identifier: customer?.identifier ?? '',
+			phone: customer?.phone ?? '',
+			address: customer?.address ?? '',
+		}),
 		onSubmit: async ({ value }) => {
-			createMutation.mutate({
+			if (!customer) return;
+			updateMutation.mutate({
+				id: customer.id,
 				name: value.name,
 				identifier: value.identifier,
 				phone: value.phone,
@@ -95,6 +99,18 @@ export function CreateCustomerDialog() {
 			});
 		},
 	});
+
+	// Reset form when customer changes
+	useEffect(() => {
+		if (customer) {
+			form.reset({
+				name: customer.name,
+				identifier: customer.identifier,
+				phone: customer.phone,
+				address: customer.address,
+			});
+		}
+	}, [customer, form]);
 
 	const handleSubmit = useCallback(
 		async (event: SubmitEvent) => {
@@ -104,24 +120,14 @@ export function CreateCustomerDialog() {
 		[form],
 	);
 
-	const isLoading = createMutation.isPending;
+	const isLoading = updateMutation.isPending;
 
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger
-				render={
-					<Button size="sm" className="gap-2 h-8 px-3">
-						<HugeiconsIcon icon={Plus} className="h-4 w-4" />
-						<span className="hidden sm:inline">{m.createCustomerButton()}</span>
-						<span className="sm:hidden">{m.createCustomerButtonShort()}</span>
-					</Button>
-				}
-			/>
-
+		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-h-dvh overflow-y-auto sm:max-w-md">
 				<DialogHeader className="gap-1">
-					<DialogTitle>{m.createCustomerTitle()}</DialogTitle>
-					<DialogDescription>{m.createCustomerDescription()}</DialogDescription>
+					<DialogTitle>{m.editCustomerTitle()}</DialogTitle>
+					<DialogDescription>{m.editCustomerDescription()}</DialogDescription>
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
@@ -228,7 +234,7 @@ export function CreateCustomerDialog() {
 						</form.Field>
 					</FieldGroup>
 
-					<DialogFooter className="gap-4">
+					<DialogFooter className="gap-2 pt-2">
 						<DialogClose
 							render={
 								<Button type="button" variant="outline" disabled={isLoading}>
@@ -240,10 +246,10 @@ export function CreateCustomerDialog() {
 							{isLoading ? (
 								<>
 									<Spinner className="mr-2 h-4 w-4" />
-									{m.creatingButton()}
+									{m.updatingButton()}
 								</>
 							) : (
-								m.createButton()
+								m.updateButton()
 							)}
 						</Button>
 					</DialogFooter>

@@ -4,7 +4,7 @@ import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { users } from '@/features/.server/auth/better-auth.schema';
 import { customers } from '@/features/.server/customers/customer.schema';
 import { products } from '@/features/.server/products/product.schema';
-import { ORDER_STATUS_VALUES } from '@/features/orders/order-status';
+import { ORDER_STATUS_VALUES } from '@/features/orders/domain/order-status';
 
 export const orders = sqliteTable('orders', {
 	id: text('id')
