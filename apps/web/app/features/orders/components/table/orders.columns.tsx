@@ -8,12 +8,17 @@ import {
 	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
+	DropdownMenuPortal,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
 	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from '@full-stack-template/ui';
 import {
 	ArrowUpIcon,
-	CheckCircle,
 	Delete02Icon,
 	MoreHorizontalIcon,
 	PencilEdit01Icon,
@@ -24,17 +29,19 @@ import type { Order } from '@/features/.server/orders/order.types';
 import { useSession } from '@/features/better-auth/better-auth.context';
 import { m } from '@/features/i18n/paraglide/messages';
 import { getLocale } from '@/features/i18n/paraglide/runtime';
+import type { OrderStatus } from '@/features/orders/domain/order-status';
+import { getOrderStatusIcon } from '@/features/orders/utils/order-status-icon';
 
 type OrderColumnsProps = {
 	onEdit: (order: Order) => void;
 	onDelete: (order: Order) => void;
-	onComplete: (order: Order) => void;
+	onStatusChange: (order: Order, status: OrderStatus) => void;
 };
 
 export function getOrderColumns({
 	onEdit,
 	onDelete,
-	onComplete,
+	onStatusChange,
 }: OrderColumnsProps): ColumnDef<Order>[] {
 	return [
 		{
@@ -217,10 +224,15 @@ export function getOrderColumns({
 				const order = row.original;
 				const { user } = useSession();
 				const userId = user?.id;
-				const canComplete =
-					order.status !== 'completed' &&
-					userId &&
-					order.assignedToUserId === userId;
+				const canChangeStatus = Boolean(
+					userId && order.assignedToUserId === userId,
+				);
+				const currentStatus =
+					order.status === 'completed'
+						? m.orderStatusCompleted()
+						: order.status === 'in_progress'
+							? m.orderStatusInProgress()
+							: m.orderStatusPending();
 
 				return (
 					<div className="flex justify-end">
@@ -245,17 +257,50 @@ export function getOrderColumns({
 										/>
 										{m.editOrder()}
 									</DropdownMenuItem>
-									{canComplete && (
-										<DropdownMenuItem
-											onClick={() => onComplete(order)}
-											className="cursor-pointer"
-										>
-											<HugeiconsIcon
-												icon={CheckCircle}
-												className="mr-2 h-4 w-4"
-											/>
-											{m.completeOrder()}
-										</DropdownMenuItem>
+									{canChangeStatus && (
+										<DropdownMenuSub>
+											<DropdownMenuSubTrigger>
+												<HugeiconsIcon
+													icon={getOrderStatusIcon(order.status)}
+													className="mr-2 h-4 w-4"
+												/>
+												{currentStatus}
+											</DropdownMenuSubTrigger>
+											<DropdownMenuPortal>
+												<DropdownMenuSubContent>
+													<DropdownMenuRadioGroup
+														value={order.status}
+														onValueChange={(value) => {
+															if (value !== order.status) {
+																onStatusChange(order, value as OrderStatus);
+															}
+														}}
+													>
+														<DropdownMenuRadioItem value="pending">
+															<HugeiconsIcon
+																icon={getOrderStatusIcon('pending')}
+																className="mr-2 h-4 w-4"
+															/>
+															{m.orderStatusPending()}
+														</DropdownMenuRadioItem>
+														<DropdownMenuRadioItem value="in_progress">
+															<HugeiconsIcon
+																icon={getOrderStatusIcon('in_progress')}
+																className="mr-2 h-4 w-4"
+															/>
+															{m.orderStatusInProgress()}
+														</DropdownMenuRadioItem>
+														<DropdownMenuRadioItem value="completed">
+															<HugeiconsIcon
+																icon={getOrderStatusIcon('completed')}
+																className="mr-2 h-4 w-4"
+															/>
+															{m.orderStatusCompleted()}
+														</DropdownMenuRadioItem>
+													</DropdownMenuRadioGroup>
+												</DropdownMenuSubContent>
+											</DropdownMenuPortal>
+										</DropdownMenuSub>
 									)}
 								</DropdownMenuGroup>
 								<DropdownMenuSeparator />

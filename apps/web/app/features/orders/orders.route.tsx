@@ -249,8 +249,8 @@ const OrdersRouteTable = () => {
 		trpc.orders.getOrders.queryOptions(getOrdersQueryInput),
 	);
 
-	const completeMutation = useMutation(
-		trpc.orders.completeOrder.mutationOptions({
+	const updateStatusMutation = useMutation(
+		trpc.orders.updateOrderStatus.mutationOptions({
 			onMutate: async (variables) => {
 				await queryClient.cancelQueries({
 					queryKey: getOrdersQueryKey,
@@ -262,7 +262,7 @@ const OrdersRouteTable = () => {
 					getOrdersQueryKey,
 					(old: Order[] | undefined) =>
 						(old ?? []).map((o) =>
-							o.id === variables.orderId ? { ...o, status: 'completed' } : o,
+							o.id === variables.orderId ? { ...o, status: variables.status } : o,
 						),
 				);
 
@@ -274,11 +274,11 @@ const OrdersRouteTable = () => {
 				}
 
 				toast.error(
-					error.data?.zodError?.orderId.message ?? m.completeOrderFailed(),
+					error.data?.zodError?.orderId?.message ?? m.editOrderFailed(),
 				);
 			},
 			onSuccess: () => {
-				toast.success(m.completeOrderSuccess());
+				toast.success(m.editOrderSuccess());
 				queryClient.invalidateQueries({
 					queryKey: trpc.orders.getOrders.queryKey(),
 				});
@@ -305,11 +305,11 @@ const OrdersRouteTable = () => {
 			getOrderColumns({
 				onEdit: (order: Order) => setEditOrder(order),
 				onDelete: (order: Order) => setDeleteOrder(order),
-				onComplete: (order: Order) => {
-					completeMutation.mutate({ orderId: order.id });
+				onStatusChange: (order: Order, status: OrderStatus) => {
+					updateStatusMutation.mutate({ orderId: order.id, status });
 				},
 			}),
-		[setEditOrder, setDeleteOrder, completeMutation.mutate],
+		[setEditOrder, setDeleteOrder, updateStatusMutation.mutate],
 	);
 
 	const table = useReactTable({
