@@ -1,5 +1,12 @@
 import { and, eq, like, or, sql } from 'drizzle-orm';
 import * as z from 'zod';
+import {
+	assertHasAnyPermission,
+	buildEntityActions,
+	canReadAllProducts,
+	canReadAssignedProducts,
+	hasPermission,
+} from '@/features/.server/auth/authorization.lib';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import {
 	productCategories,
@@ -16,9 +23,26 @@ const getProductsInput = z
 
 export const getProducts = procedures.auth
 	.input(getProductsInput)
-	.query(async ({ input }) => {
+	.query(async ({ input, ctx }) => {
+		assertHasAnyPermission(ctx.permissions, [
+			{ products: ['list-all'] },
+			{ products: ['list-assigned'] },
+		]);
+		const canUpdateProducts = hasPermission(ctx.permissions, { products: ['update'] });
+		const canDeleteProducts = hasPermission(ctx.permissions, { products: ['delete'] });
+
 		const categoryId = input?.categoryId;
 		const search = input?.search;
+		const inAssignedOrderScope =
+			!canReadAllProducts(ctx.permissions) && canReadAssignedProducts(ctx.permissions)
+				? sql`EXISTS (
+				SELECT 1
+				FROM order_items oi
+				JOIN orders o ON oi.order_id = o.id
+				WHERE oi.product_id = ${products.id}
+				  AND o.assigned_to_user_id = ${ctx.user.id}
+			)`
+				: undefined;
 
 		const result = await db
 			.select({
@@ -48,6 +72,7 @@ export const getProducts = procedures.auth
 			)
 			.where(
 				and(
+					inAssignedOrderScope,
 					categoryId ? eq(products.categoryId, categoryId) : undefined,
 					search
 						? or(
@@ -59,5 +84,11 @@ export const getProducts = procedures.auth
 				),
 			);
 
-		return result;
+		return result.map((product) => ({
+			...product,
+			actions: buildEntityActions({
+				canUpdate: canUpdateProducts,
+				canDelete: canDeleteProducts,
+			}),
+		}));
 	});

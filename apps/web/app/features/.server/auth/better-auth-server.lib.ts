@@ -4,6 +4,7 @@ import { admin as adminPlugin } from 'better-auth/plugins';
 import * as authSchema from '@/features/.server/auth/better-auth.schema';
 import {
 	ac,
+	accounting,
 	admin,
 	operator,
 	supervisor,
@@ -28,6 +29,7 @@ export const auth = betterAuth({
 				admin,
 				operator,
 				supervisor,
+				accounting,
 			},
 		}),
 	],

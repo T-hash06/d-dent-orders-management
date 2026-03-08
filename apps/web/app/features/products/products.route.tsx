@@ -49,6 +49,7 @@ import type {
 	ProductCategory,
 	ProductPreview,
 } from '@/features/.server/products/product.types';
+import { useSession } from '@/features/better-auth/better-auth.context';
 import { m } from '@/features/i18n/paraglide/messages';
 import { CreateProductDialog } from '@/features/products/components/dialogs/create-product-dialog';
 import { DeleteProductDialog } from '@/features/products/components/dialogs/delete-product-dialog';
@@ -130,13 +131,21 @@ const useProductStore = create<ProductStoreState & ProductStoreActions>(
 const emptyProductsFallback: ProductPreview[] = [];
 const emptyProductCategoriesFallback: ProductCategory[] = [];
 
-const ProductsRouteHeader = () => (
-	<PageHeader
-		title={m.productsTitle()}
-		description={m.productsDescription()}
-		action={<CreateProductDialog />}
-	/>
-);
+const ProductsRouteHeader = () => {
+	const { permissions } = useSession();
+
+	return (
+		<PageHeader
+			title={m.productsTitle()}
+			description={m.productsDescription()}
+			action={
+				permissions.products.includes('create') ? (
+					<CreateProductDialog />
+				) : undefined
+			}
+		/>
+	);
+};
 
 const ProductsRouteStats = () => {
 	const trpc = useTRPC();

@@ -57,6 +57,10 @@ pnpm --filter @full-stack-template/web machine-translate
   - app router composition in `.server/trpc/trpc.router.ts`
   - client/provider wiring in `features/trpc/trpc.provider.tsx` and `trpc.context.tsx`.
 - Auth uses **better-auth** with Drizzle adapter (`better-auth-server.lib.ts`) and role definitions in `better-auth-roles.constant.ts`.
+- Authorization uses a **typed permission system**:
+  - permission statements/roles: `apps/web/app/features/.server/auth/better-auth-roles.constant.ts`
+  - authorization helpers: `apps/web/app/features/.server/auth/authorization.lib.ts`
+  - request-scoped permission resolution: `apps/web/app/features/.server/trpc/trpc.init.ts`
 - Database uses **Drizzle + LibSQL/SQLite**. Schema discovery for migrations is `app/features/.server/**/*.schema.ts`.
 - i18n uses **inlang/paraglide**:
   - source config in `app/features/i18n/project.inlang/`
@@ -94,3 +98,22 @@ pnpm --filter @full-stack-template/web machine-translate
   - tabs for indentation
   - single quotes
   - organize imports enabled.
+
+## Authorization system (important)
+
+- **Source of truth** is permissions, not role-name conditionals in business logic.
+  - Roles map to permissions in `better-auth-roles.constant.ts`.
+  - Procedures should check permissions through helpers in `authorization.lib.ts`.
+- **Do not** call `auth.api.userHasPermission` inside each query/mutation.
+  - Permissions are resolved once per request in `createTRPCContext` and exposed as `ctx.permissions`.
+  - Use `assertHasPermission`, `assertHasAnyPermission`, `hasPermission`, and scope helpers (`canReadAll*`, `canReadAssigned*`).
+- Current permission model includes **scope-aware actions** (for example):
+  - list: `list-all`, `list-assigned`
+  - orders updates: `update-all`, `update-assigned`
+  - orders assignment: `assign-all`, `assign-assigned`
+  - orders status: `update-status-all`, `update-status-assigned`
+- When adding/changing capabilities:
+  1. Update `statement` and role mappings in `better-auth-roles.constant.ts`.
+  2. Reuse/extend typed helpers in `authorization.lib.ts` (keep type-safety; avoid `Record<string, string[]>`).
+  3. Apply permission checks in server procedures using `ctx.permissions`.
+  4. Keep frontend as a consumer of backend-provided `actions`, not as the authority for business rules.

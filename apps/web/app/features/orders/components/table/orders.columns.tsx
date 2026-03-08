@@ -26,7 +26,6 @@ import {
 import { HugeiconsIcon } from '@hugeicons/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { Order } from '@/features/.server/orders/order.types';
-import { useSession } from '@/features/better-auth/better-auth.context';
 import { m } from '@/features/i18n/paraglide/messages';
 import { getLocale } from '@/features/i18n/paraglide/runtime';
 import type { OrderStatus } from '@/features/orders/domain/order-status';
@@ -222,17 +221,20 @@ export function getOrderColumns({
 			enableHiding: false,
 			cell: ({ row }) => {
 				const order = row.original;
-				const { user } = useSession();
-				const userId = user?.id;
-				const canChangeStatus = Boolean(
-					userId && order.assignedToUserId === userId,
-				);
+				const canEdit = order.actions.canEdit;
+				const canDelete = order.actions.canDelete;
+				const canChangeStatus = order.actions.canUpdateStatus;
+				const hasAnyAction = canEdit || canDelete || canChangeStatus;
 				const currentStatus =
 					order.status === 'completed'
 						? m.orderStatusCompleted()
 						: order.status === 'in_progress'
 							? m.orderStatusInProgress()
 							: m.orderStatusPending();
+
+				if (!hasAnyAction) {
+					return null;
+				}
 
 				return (
 					<div className="flex justify-end">
@@ -247,16 +249,18 @@ export function getOrderColumns({
 							<DropdownMenuContent align="end" className="w-max">
 								<DropdownMenuGroup>
 									<DropdownMenuLabel>{m.orderActions()}</DropdownMenuLabel>
-									<DropdownMenuItem
-										onClick={() => onEdit(order)}
-										className="cursor-pointer"
-									>
-										<HugeiconsIcon
-											icon={PencilEdit01Icon}
-											className="mr-2 h-4 w-4"
-										/>
-										{m.editOrder()}
-									</DropdownMenuItem>
+									{canEdit && (
+										<DropdownMenuItem
+											onClick={() => onEdit(order)}
+											className="cursor-pointer"
+										>
+											<HugeiconsIcon
+												icon={PencilEdit01Icon}
+												className="mr-2 h-4 w-4"
+											/>
+											{m.editOrder()}
+										</DropdownMenuItem>
+									)}
 									{canChangeStatus && (
 										<DropdownMenuSub>
 											<DropdownMenuSubTrigger>
@@ -303,20 +307,24 @@ export function getOrderColumns({
 										</DropdownMenuSub>
 									)}
 								</DropdownMenuGroup>
-								<DropdownMenuSeparator />
-								<DropdownMenuGroup>
-									<DropdownMenuItem
-										onClick={() => onDelete(order)}
-										className="cursor-pointer"
-										variant="destructive"
-									>
-										<HugeiconsIcon
-											icon={Delete02Icon}
-											className="mr-2 h-4 w-4"
-										/>
-										{m.deleteOrder()}
-									</DropdownMenuItem>
-								</DropdownMenuGroup>
+								{canDelete && (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuGroup>
+											<DropdownMenuItem
+												onClick={() => onDelete(order)}
+												className="cursor-pointer"
+												variant="destructive"
+											>
+												<HugeiconsIcon
+													icon={Delete02Icon}
+													className="mr-2 h-4 w-4"
+												/>
+												{m.deleteOrder()}
+											</DropdownMenuItem>
+										</DropdownMenuGroup>
+									</>
+								)}
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</div>

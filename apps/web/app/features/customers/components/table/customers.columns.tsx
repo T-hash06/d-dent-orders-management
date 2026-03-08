@@ -124,6 +124,13 @@ export function getCustomerColumns({
 			enableHiding: false,
 			cell: ({ row }) => {
 				const customer = row.original;
+				const canEdit = customer.actions.canEdit;
+				const canDelete = customer.actions.canDelete;
+
+				if (!canEdit && !canDelete) {
+					return null;
+				}
+
 				return (
 					<div className="flex justify-end">
 						<DropdownMenu>
@@ -137,31 +144,37 @@ export function getCustomerColumns({
 							<DropdownMenuContent align="end" className="w-max">
 								<DropdownMenuGroup>
 									<DropdownMenuLabel>{m.customerActions()}</DropdownMenuLabel>
-									<DropdownMenuItem
-										onClick={() => onEdit(customer)}
-										className="cursor-pointer"
-									>
-										<HugeiconsIcon
-											icon={PencilEdit01Icon}
-											className="mr-2 h-4 w-4"
-										/>
-										{m.editCustomer()}
-									</DropdownMenuItem>
+									{canEdit && (
+										<DropdownMenuItem
+											onClick={() => onEdit(customer)}
+											className="cursor-pointer"
+										>
+											<HugeiconsIcon
+												icon={PencilEdit01Icon}
+												className="mr-2 h-4 w-4"
+											/>
+											{m.editCustomer()}
+										</DropdownMenuItem>
+									)}
 								</DropdownMenuGroup>
-								<DropdownMenuSeparator />
-								<DropdownMenuGroup>
-									<DropdownMenuItem
-										onClick={() => onDelete(customer)}
-										className="cursor-pointer"
-										variant="destructive"
-									>
-										<HugeiconsIcon
-											icon={Delete02Icon}
-											className="mr-2 h-4 w-4"
-										/>
-										{m.deleteCustomer()}
-									</DropdownMenuItem>
-								</DropdownMenuGroup>
+								{canDelete && (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuGroup>
+											<DropdownMenuItem
+												onClick={() => onDelete(customer)}
+												className="cursor-pointer"
+												variant="destructive"
+											>
+												<HugeiconsIcon
+													icon={Delete02Icon}
+													className="mr-2 h-4 w-4"
+												/>
+												{m.deleteCustomer()}
+											</DropdownMenuItem>
+										</DropdownMenuGroup>
+									</>
+								)}
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</div>

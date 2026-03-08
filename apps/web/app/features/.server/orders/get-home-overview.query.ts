@@ -1,4 +1,10 @@
 import { and, eq } from 'drizzle-orm';
+import {
+	assertHasAnyPermission,
+	canBeAssignedOrder,
+	canReadAllOrders,
+	canReadAssignedOrders,
+} from '@/features/.server/auth/authorization.lib';
 import { customers } from '@/features/.server/customers/customer.schema';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import { orderItems, orders } from '@/features/.server/orders/order.schema';
@@ -6,7 +12,21 @@ import { procedures } from '@/features/.server/trpc/trpc.init';
 import { isOrderLate } from '@/features/orders/domain/order-status';
 
 export const getHomeOverview = procedures.auth.query(async ({ ctx }) => {
-	const allOrders = await db.select().from(orders);
+	assertHasAnyPermission(ctx.permissions, [
+		{ orders: ['list-all'] },
+		{ orders: ['list-assigned'] },
+	]);
+	const shouldScopeToAssigned =
+		!canReadAllOrders(ctx.permissions) && canReadAssignedOrders(ctx.permissions);
+
+	const allOrders = await db
+		.select()
+		.from(orders)
+		.where(
+			shouldScopeToAssigned
+				? eq(orders.assignedToUserId, ctx.user.id)
+				: undefined,
+		);
 
 	const stats = {
 		totalOrders: allOrders.length,
@@ -19,15 +39,17 @@ export const getHomeOverview = procedures.auth.query(async ({ ctx }) => {
 			.length,
 	};
 
-	const assignedPendingOrders = await db
-		.select()
-		.from(orders)
-		.where(
-			and(
-				eq(orders.assignedToUserId, ctx.user.id),
-				eq(orders.status, 'pending'),
-			),
-		);
+	const assignedPendingOrders = canBeAssignedOrder(ctx.permissions)
+		? await db
+				.select()
+				.from(orders)
+				.where(
+					and(
+						eq(orders.assignedToUserId, ctx.user.id),
+						eq(orders.status, 'pending'),
+					),
+				)
+		: [];
 
 	const assignedPending = await Promise.all(
 		assignedPendingOrders.map(async (order) => {

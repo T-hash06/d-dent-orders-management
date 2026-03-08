@@ -1,5 +1,11 @@
 import { and, eq, gte, lt, lte, ne } from 'drizzle-orm';
 import * as z from 'zod';
+import {
+	assertHasAnyPermission,
+	buildOrderActions,
+	canReadAllOrders,
+	canReadAssignedOrders,
+} from '@/features/.server/auth/authorization.lib';
 import { customers } from '@/features/.server/customers/customer.schema';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import { orderItems, orders } from '@/features/.server/orders/order.schema';
@@ -20,12 +26,22 @@ const getOrdersInput = z
 
 export const getOrders = procedures.auth
 	.input(getOrdersInput)
-	.query(async ({ input }) => {
+	.query(async ({ input, ctx }) => {
+		assertHasAnyPermission(ctx.permissions, [
+			{ orders: ['list-all'] },
+			{ orders: ['list-assigned'] },
+		]);
+		const shouldScopeToAssigned =
+			!canReadAllOrders(ctx.permissions) && canReadAssignedOrders(ctx.permissions);
+
 		const ordersRows = await db
 			.select()
 			.from(orders)
 			.where(
 				and(
+					shouldScopeToAssigned
+						? eq(orders.assignedToUserId, ctx.user.id)
+						: undefined,
 					input?.lateOnly ? ne(orders.status, 'completed') : undefined,
 					input?.lateOnly
 						? lt(orders.expectedDeliveryAt, new Date())
@@ -69,6 +85,11 @@ export const getOrders = procedures.auth
 					isLate: isOrderLate(order.status, order.expectedDeliveryAt),
 					customer,
 					items,
+					actions: buildOrderActions({
+						permissions: ctx.permissions,
+						userId: ctx.user.id,
+						assignedToUserId: order.assignedToUserId,
+					}),
 				};
 			}),
 		);

@@ -1,12 +1,32 @@
 import { createAccessControl } from 'better-auth/plugins/access';
 import { adminAc, defaultStatements } from 'better-auth/plugins/admin/access';
 
-const statement = {
+export const statement = {
 	...defaultStatements,
-	products: ['list', 'create', 'update', 'delete'],
-	customers: ['list', 'create', 'update', 'delete'],
-	orders: ['list', 'create', 'update', 'delete'],
+	products: ['list', 'list-all', 'list-assigned', 'create', 'update', 'delete'],
+	customers: ['list', 'list-all', 'list-assigned', 'create', 'update', 'delete'],
+	orders: [
+		'list',
+		'list-all',
+		'list-assigned',
+		'create',
+		'update-all',
+		'update-assigned',
+		'delete',
+		'assign-all',
+		'assign-assigned',
+		'update-status-all',
+		'update-status-assigned',
+	],
 } as const;
+
+export type Statement = typeof statement;
+export type PermissionResource = 'products' | 'customers' | 'orders';
+export type PermissionAction<Resource extends PermissionResource> =
+	Statement[Resource][number];
+export type PermissionRequirement = Partial<{
+	[Resource in PermissionResource]: readonly PermissionAction<Resource>[];
+}>;
 
 export const ac = createAccessControl(statement);
 
@@ -16,49 +36,66 @@ export const admin = ac.newRole({
 });
 
 export const operator = ac.newRole({
-	products: ['list'],
-	customers: ['list'],
-	orders: ['list'],
+	products: ['list', 'list-assigned'],
+	customers: ['list', 'list-assigned'],
+	orders: ['list', 'list-assigned', 'update-status-assigned'],
 });
 
 export const supervisor = ac.newRole({
-	...operator.statements,
-	products: ['create', 'update'],
-	customers: ['create', 'update'],
-	orders: ['create', 'update'],
+	products: ['list', 'list-all'],
+	customers: ['list', 'list-all'],
+	orders: [
+		'list',
+		'list-all',
+		'update-assigned',
+		'assign-assigned',
+		'update-status-assigned',
+	],
 });
 
-export const EMPTY_PERMISSIONS = {
+export const accounting = ac.newRole({
+	products: ['list', 'list-all', 'create', 'update'],
+	customers: ['list', 'list-all'],
+	orders: ['list', 'list-all', 'update-status-all'],
+});
+
+export type Permissions = {
+	[Resource in PermissionResource]: readonly PermissionAction<Resource>[];
+};
+
+export const EMPTY_PERMISSIONS: Permissions = {
 	products: [],
 	customers: [],
 	orders: [],
-} as const;
-
-function isValidRole(role: string | null | undefined): role is Role {
-	if (!role) {
-		return false;
-	}
-
-	return ['admin', 'operator', 'supervisor'].includes(role);
-}
+};
 
 export const getPermissionsByRole = (role: string | null | undefined) => {
 	if (!isValidRole(role)) {
 		return EMPTY_PERMISSIONS;
 	}
 
-	switch (role) {
-		case 'admin':
-			return admin.statements;
-		case 'operator':
-			return operator.statements;
-		case 'supervisor':
-			return supervisor.statements;
-		default:
-			return EMPTY_PERMISSIONS;
-	}
+	const roleStatements =
+		role === 'admin'
+			? admin.statements
+			: role === 'operator'
+				? operator.statements
+				: role === 'supervisor'
+					? supervisor.statements
+					: accounting.statements;
+
+	return {
+		products: roleStatements.products,
+		customers: roleStatements.customers,
+		orders: roleStatements.orders,
+	};
 };
 
-export type Role = 'admin' | 'operator' | 'supervisor';
+export type Role = 'admin' | 'operator' | 'supervisor' | 'accounting';
 
-export type Permissions = ReturnType<typeof getPermissionsByRole>;
+function isValidRole(role: string | null | undefined): role is Role {
+	if (!role) {
+		return false;
+	}
+
+	return ['admin', 'operator', 'supervisor', 'accounting'].includes(role);
+}

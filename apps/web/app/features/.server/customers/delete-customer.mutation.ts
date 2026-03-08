@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import * as z from 'zod';
+import { assertHasPermission } from '@/features/.server/auth/authorization.lib';
 import { customers } from '@/features/.server/customers/customer.schema';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
@@ -18,7 +19,11 @@ const deleteCustomerInput = z.object({
 
 export const deleteCustomer = procedures.auth
 	.input(deleteCustomerInput)
-	.mutation(async ({ input }) => {
+	.mutation(async ({ input, ctx }) => {
+		assertHasPermission(ctx.permissions, {
+			customers: ['delete'],
+		});
+
 		const [deletedCustomer] = await db
 			.delete(customers)
 			.where(eq(customers.id, input.id))

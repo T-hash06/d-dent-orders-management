@@ -40,6 +40,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { PageHeader } from '@/components/layout/page-header';
 import { StatBar } from '@/components/ui/stat-bar';
 import type { Customer } from '@/features/.server/customers/customer.types';
+import { useSession } from '@/features/better-auth/better-auth.context';
 import { CreateCustomerDialog } from '@/features/customers/components/dialogs/create-customer-dialog';
 import { DeleteCustomerDialog } from '@/features/customers/components/dialogs/delete-customer-dialog';
 import { EditCustomerDialog } from '@/features/customers/components/dialogs/edit-customer-dialog';
@@ -112,13 +113,21 @@ const useCustomerStore = create<CustomerStoreState & CustomerStoreActions>(
 
 const emptyCustomersFallback: Customer[] = [];
 
-const CustomersRouteHeader = () => (
-	<PageHeader
-		title={m.customersTitle()}
-		description={m.customersDescription()}
-		action={<CreateCustomerDialog />}
-	/>
-);
+const CustomersRouteHeader = () => {
+	const { permissions } = useSession();
+
+	return (
+		<PageHeader
+			title={m.customersTitle()}
+			description={m.customersDescription()}
+			action={
+				permissions.customers.includes('create') ? (
+					<CreateCustomerDialog />
+				) : undefined
+			}
+		/>
+	);
+};
 
 const CustomersRouteStats = () => {
 	const trpc = useTRPC();

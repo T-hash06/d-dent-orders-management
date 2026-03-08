@@ -55,6 +55,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { PageHeader } from '@/components/layout/page-header';
 import { StatBar } from '@/components/ui/stat-bar';
 import type { Order } from '@/features/.server/orders/order.types';
+import { useSession } from '@/features/better-auth/better-auth.context';
 import { m } from '@/features/i18n/paraglide/messages';
 import { getLocale } from '@/features/i18n/paraglide/runtime';
 import { CreateOrderDialog } from '@/features/orders/components/dialogs/create-order-dialog';
@@ -140,13 +141,19 @@ const useOrderStore = create<OrderStoreState & OrderStoreActions>((set) => ({
 
 const emptyOrdersFallback: Order[] = [];
 
-const OrdersRouteHeader = () => (
-	<PageHeader
-		title={m.ordersTitle()}
-		description={m.ordersDescription()}
-		action={<CreateOrderDialog />}
-	/>
-);
+const OrdersRouteHeader = () => {
+	const { permissions } = useSession();
+
+	return (
+		<PageHeader
+			title={m.ordersTitle()}
+			description={m.ordersDescription()}
+			action={
+				permissions.orders.includes('create') ? <CreateOrderDialog /> : undefined
+			}
+		/>
+	);
+};
 
 const OrdersRouteStats = () => {
 	const trpc = useTRPC();

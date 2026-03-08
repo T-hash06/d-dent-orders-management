@@ -1,4 +1,5 @@
 import * as z from 'zod';
+import { assertHasPermission } from '@/features/.server/auth/authorization.lib';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import { orderItems, orders } from '@/features/.server/orders/order.schema';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
@@ -78,6 +79,10 @@ const createOrderInput = z.object({
 export const createOrder = procedures.auth
 	.input(createOrderInput)
 	.mutation(async ({ input, ctx }) => {
+		assertHasPermission(ctx.permissions, {
+			orders: ['create'],
+		});
+
 		return db.transaction(async (tx) => {
 			const [createdOrder] = await tx
 				.insert(orders)

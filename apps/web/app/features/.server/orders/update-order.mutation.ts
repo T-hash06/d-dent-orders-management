@@ -1,5 +1,10 @@
 import { eq } from 'drizzle-orm';
 import * as z from 'zod';
+import {
+	assertHasAnyPermission,
+	forbiddenError,
+	hasPermission,
+} from '@/features/.server/auth/authorization.lib';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import { orderItems, orders } from '@/features/.server/orders/order.schema';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
@@ -86,7 +91,82 @@ const updateOrderInput = z.object({
 export const updateOrder = procedures.auth
 	.input(updateOrderInput)
 	.mutation(async ({ input, ctx }) => {
+		assertHasAnyPermission(ctx.permissions, [
+			{ orders: ['update-all'] },
+			{ orders: ['update-assigned'] },
+		]);
+		const canUpdateAnyOrder = hasPermission(ctx.permissions, {
+			orders: ['update-all'],
+		});
+		const canUpdateAssignedOrder = hasPermission(ctx.permissions, {
+			orders: ['update-assigned'],
+		});
+		const canAssignAnyOrder = hasPermission(ctx.permissions, {
+			orders: ['assign-all'],
+		});
+		const canAssignAssignedOrder = hasPermission(ctx.permissions, {
+			orders: ['assign-assigned'],
+		});
+
 		return db.transaction(async (tx) => {
+			const [currentOrder] = await tx
+				.select()
+				.from(orders)
+				.where(eq(orders.id, input.id));
+
+			if (!currentOrder) {
+				return null;
+			}
+
+			const isReassigning =
+				input.assignedToUserId !== currentOrder.assignedToUserId;
+			if (isReassigning) {
+				const canAssignCurrentOrder =
+					canAssignAnyOrder ||
+					(canAssignAssignedOrder &&
+						currentOrder.assignedToUserId === ctx.user.id);
+				if (!canAssignCurrentOrder) {
+					throw forbiddenError();
+				}
+			}
+
+			const currentItems = await tx
+				.select({
+					productId: orderItems.productId,
+					quantity: orderItems.quantity,
+					price: orderItems.price,
+				})
+				.from(orderItems)
+				.where(eq(orderItems.orderId, input.id));
+
+			if (!canUpdateAnyOrder) {
+				if (
+					!canUpdateAssignedOrder ||
+					currentOrder.assignedToUserId !== ctx.user.id
+				) {
+					throw forbiddenError();
+				}
+
+				const isChangingRestrictedOrderFields =
+					input.customerId !== currentOrder.customerId ||
+					input.deliveryAddress !== currentOrder.deliveryAddress ||
+					input.expectedDeliveryAt.getTime() !==
+						currentOrder.expectedDeliveryAt.getTime();
+
+				if (isChangingRestrictedOrderFields) {
+					throw forbiddenError();
+				}
+
+				if (
+					!isAssignedUpdaterAllowedItemsUpdate({
+						currentItems,
+						nextItems: input.items,
+					})
+				) {
+					throw forbiddenError();
+				}
+			}
+
 			const [updatedOrder] = await tx
 				.update(orders)
 				.set({
@@ -116,3 +196,43 @@ export const updateOrder = procedures.auth
 			return updatedOrder;
 		});
 	});
+
+function isAssignedUpdaterAllowedItemsUpdate({
+	currentItems,
+	nextItems,
+}: {
+	currentItems: Array<{
+		productId: string;
+		quantity: number;
+		price: number;
+	}>;
+	nextItems: Array<{
+		productId: string;
+		quantity: number;
+		price: number;
+	}>;
+}): boolean {
+	if (currentItems.length !== nextItems.length) {
+		return false;
+	}
+
+	const currentMap = new Map(currentItems.map((item) => [item.productId, item]));
+	const nextMap = new Map(nextItems.map((item) => [item.productId, item]));
+
+	if (currentMap.size !== currentItems.length || nextMap.size !== nextItems.length) {
+		return false;
+	}
+
+	for (const [productId, currentItem] of currentMap.entries()) {
+		const nextItem = nextMap.get(productId);
+		if (!nextItem) {
+			return false;
+		}
+
+		if (nextItem.price !== currentItem.price) {
+			return false;
+		}
+	}
+
+	return true;
+}

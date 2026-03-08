@@ -135,6 +135,13 @@ export function getProductColumns({
 			enableHiding: false,
 			cell: ({ row }) => {
 				const product = row.original;
+				const canEdit = product.actions.canEdit;
+				const canDelete = product.actions.canDelete;
+
+				if (!canEdit && !canDelete) {
+					return null;
+				}
+
 				return (
 					<div className="flex justify-end">
 						<DropdownMenu>
@@ -148,31 +155,37 @@ export function getProductColumns({
 							<DropdownMenuContent align="end" className="w-max">
 								<DropdownMenuGroup>
 									<DropdownMenuLabel>{m.productActions()}</DropdownMenuLabel>
-									<DropdownMenuItem
-										onClick={() => onEdit(product)}
-										className="cursor-pointer"
-									>
-										<HugeiconsIcon
-											icon={PencilEdit01Icon}
-											className="mr-2 h-4 w-4"
-										/>
-										{m.editProduct()}
-									</DropdownMenuItem>
+									{canEdit && (
+										<DropdownMenuItem
+											onClick={() => onEdit(product)}
+											className="cursor-pointer"
+										>
+											<HugeiconsIcon
+												icon={PencilEdit01Icon}
+												className="mr-2 h-4 w-4"
+											/>
+											{m.editProduct()}
+										</DropdownMenuItem>
+									)}
 								</DropdownMenuGroup>
-								<DropdownMenuSeparator />
-								<DropdownMenuGroup>
-									<DropdownMenuItem
-										onClick={() => onDelete(product)}
-										className="cursor-pointer text-destructive"
-										variant="destructive"
-									>
-										<HugeiconsIcon
-											icon={Delete02Icon}
-											className="mr-2 h-4 w-4 text-destructive"
-										/>
-										{m.deleteProduct()}
-									</DropdownMenuItem>
-								</DropdownMenuGroup>
+								{canDelete && (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuGroup>
+											<DropdownMenuItem
+												onClick={() => onDelete(product)}
+												className="cursor-pointer text-destructive"
+												variant="destructive"
+											>
+												<HugeiconsIcon
+													icon={Delete02Icon}
+													className="mr-2 h-4 w-4 text-destructive"
+												/>
+												{m.deleteProduct()}
+											</DropdownMenuItem>
+										</DropdownMenuGroup>
+									</>
+								)}
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</div>

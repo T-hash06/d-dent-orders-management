@@ -58,6 +58,10 @@ export function CreateCustomerDialog() {
 							updatedAt: new Date(),
 							createdById: 'temp',
 							updatedById: 'temp',
+							actions: {
+								canEdit: old?.[0]?.actions.canEdit ?? true,
+								canDelete: old?.[0]?.actions.canDelete ?? true,
+							},
 						} satisfies Customer,
 					],
 				);

@@ -1,5 +1,6 @@
 import { eq, getTableColumns } from 'drizzle-orm';
 import * as z from 'zod';
+import { assertHasPermission } from '@/features/.server/auth/authorization.lib';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import {
 	productCategories,
@@ -55,6 +56,10 @@ const updateProductInput = z.object({
 export const updateProduct = procedures.auth
 	.input(updateProductInput)
 	.mutation(async ({ input, ctx }) => {
+		assertHasPermission(ctx.permissions, {
+			products: ['update'],
+		});
+
 		const categoryId = await resolveProductCategoryId({
 			categoryId: input.categoryId,
 			userId: ctx.user.id,
