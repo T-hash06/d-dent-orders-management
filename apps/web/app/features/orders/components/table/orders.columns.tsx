@@ -32,6 +32,10 @@ import { m } from '@/features/i18n/paraglide/messages';
 import { getLocale } from '@/features/i18n/paraglide/runtime';
 import type { OrderPaymentStatus } from '@/features/orders/domain/order-payment-status';
 import type { OrderStatus } from '@/features/orders/domain/order-status';
+import {
+	getOrderItemsCount,
+	getOrderTotal,
+} from '@/features/orders/utils/order-metrics';
 import { getOrderStatusIcon } from '@/features/orders/utils/order-status-icon';
 
 type OrderColumnsProps = {
@@ -42,6 +46,18 @@ type OrderColumnsProps = {
 		order: Order,
 		paymentStatus: OrderPaymentStatus,
 	) => void;
+};
+
+const ORDER_STATUS_SORT_ORDER: Record<OrderStatus, number> = {
+	pending: 0,
+	in_progress: 1,
+	completed: 2,
+	cancelled: 3,
+};
+
+const ORDER_PAYMENT_STATUS_SORT_ORDER: Record<OrderPaymentStatus, number> = {
+	pending: 0,
+	paid: 1,
 };
 
 export function getOrderColumns({
@@ -78,7 +94,10 @@ export function getOrderColumns({
 			enableHiding: false,
 		},
 		{
-			accessorKey: 'customer',
+			accessorFn: (row) =>
+				[row.customer?.name, row.customer?.identifier]
+					.filter(Boolean)
+					.join(' '),
 			id: 'customer',
 			meta: {
 				name: m.orderCustomer(),
@@ -138,6 +157,9 @@ export function getOrderColumns({
 			meta: {
 				name: m.orderStatus(),
 			},
+			sortingFn: (a, b) =>
+				ORDER_STATUS_SORT_ORDER[a.original.status] -
+				ORDER_STATUS_SORT_ORDER[b.original.status],
 			cell: ({ row }) => {
 				const status = row.original.status;
 				const label =
@@ -171,6 +193,7 @@ export function getOrderColumns({
 			meta: {
 				name: m.orderExpectedDelivery(),
 			},
+			sortingFn: 'datetime',
 			cell: ({ row }) => {
 				const date = row.getValue<Date>('expectedDeliveryAt');
 				const formatted = new Intl.DateTimeFormat(getLocale(), {
@@ -191,31 +214,32 @@ export function getOrderColumns({
 			},
 		},
 		{
+			accessorFn: (row) => getOrderItemsCount(row),
 			id: 'items',
 			header: () => m.orderItems(),
 			meta: {
 				name: m.orderItems(),
 			},
+			sortingFn: 'basic',
 			cell: ({ row }) => {
-				const items = row.original.items;
+				const itemsCount = row.getValue<number>('items');
 				return (
 					<Badge variant="secondary" className="font-normal text-xs">
-						{m.orderItemsCount({ count: String(items.length) })}
+						{m.orderItemsCount({ count: String(itemsCount) })}
 					</Badge>
 				);
 			},
 		},
 		{
+			accessorFn: (row) => getOrderTotal(row),
 			id: 'total',
 			header: () => <div className="text-right">{m.orderTotal()}</div>,
 			meta: {
 				name: m.orderTotal(),
 			},
+			sortingFn: 'basic',
 			cell: ({ row }) => {
-				const total = row.original.items.reduce(
-					(sum, item) => sum + item.price * item.quantity,
-					0,
-				);
+				const total = row.getValue<number>('total');
 				const formatted = new Intl.NumberFormat('es-CO', {
 					style: 'currency',
 					currency: 'COP',
@@ -234,6 +258,9 @@ export function getOrderColumns({
 			meta: {
 				name: m.orderPaymentStatus(),
 			},
+			sortingFn: (a, b) =>
+				ORDER_PAYMENT_STATUS_SORT_ORDER[a.original.paymentStatus] -
+				ORDER_PAYMENT_STATUS_SORT_ORDER[b.original.paymentStatus],
 			cell: ({ row }) => {
 				const paymentStatus = row.original.paymentStatus;
 				const label =
