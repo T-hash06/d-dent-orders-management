@@ -95,6 +95,7 @@ export function CreateOrderDialog() {
 				deliveryAddress: parsedValue.deliveryAddress,
 				expectedDeliveryAt: parsedValue.expectedDeliveryAt,
 				status: parsedValue.status,
+				shippingStatus: parsedValue.shippingStatus,
 				paymentStatus: canEditPaymentStatus
 					? parsedValue.paymentStatus
 					: 'pending',
@@ -364,6 +365,57 @@ export function CreateOrderDialog() {
 															{m.orderStatusCancelled()}
 														</SelectItem>
 													)}
+												</SelectGroup>
+											</SelectContent>
+										</Select>
+										<FieldError errors={field.state.meta.errors} />
+									</Field>
+								);
+							}}
+						</form.Field>
+
+						<form.Field name="shippingStatus">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>
+											{m.orderShippingStatus()}
+										</FieldLabel>
+										<Select
+											value={field.state.value}
+											onValueChange={field.handleChange}
+											disabled={isLoading}
+											itemToStringLabel={(item) => {
+												switch (item) {
+													case 'to_ship':
+														return m.orderShippingStatusToShip();
+													case 'shipped':
+														return m.orderShippingStatusShipped();
+													case 'delivered':
+														return m.orderShippingStatusDelivered();
+													default:
+														return item;
+												}
+											}}
+										>
+											<SelectTrigger aria-invalid={isInvalid}>
+												<SelectValue
+													placeholder={m.orderShippingStatusPlaceholder()}
+												/>
+											</SelectTrigger>
+											<SelectContent alignItemWithTrigger={false}>
+												<SelectGroup>
+													<SelectItem value="to_ship">
+														{m.orderShippingStatusToShip()}
+													</SelectItem>
+													<SelectItem value="shipped">
+														{m.orderShippingStatusShipped()}
+													</SelectItem>
+													<SelectItem value="delivered">
+														{m.orderShippingStatusDelivered()}
+													</SelectItem>
 												</SelectGroup>
 											</SelectContent>
 										</Select>

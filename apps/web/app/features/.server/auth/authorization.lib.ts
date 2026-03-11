@@ -19,6 +19,7 @@ export type OrderActions = {
 	canEdit: boolean;
 	canDelete: boolean;
 	canUpdateStatus: boolean;
+	canUpdateShippingStatus: boolean;
 	canCancelOrder: boolean;
 	canUpdatePaymentStatus: boolean;
 	canAssign: boolean;
@@ -28,6 +29,7 @@ export type OrderActions = {
 		canEditDeliveryAddress: boolean;
 		canEditExpectedDeliveryAt: boolean;
 		canEditStatus: boolean;
+		canEditShippingStatus: boolean;
 		canCancelOrder: boolean;
 		canEditPaymentStatus: boolean;
 		canEditItemProductId: boolean;
@@ -236,6 +238,7 @@ export const buildOrderActions = ({
 		hasPermission(permissions, { orders: ['update-status-all'] }) ||
 		(assignedToCurrentUser &&
 			hasPermission(permissions, { orders: ['update-status-assigned'] }));
+	const canUpdateShippingStatus = canUpdateStatus;
 	const canCancelOrder = hasPermission(permissions, { orders: ['cancel'] });
 	const canUpdatePaymentStatus = hasPermission(permissions, {
 		orders: ['update-payment-status'],
@@ -255,6 +258,7 @@ export const buildOrderActions = ({
 				canEditDeliveryAddress: true,
 				canEditExpectedDeliveryAt: true,
 				canEditStatus: true,
+				canEditShippingStatus: true,
 				canCancelOrder,
 				canEditPaymentStatus: canUpdatePaymentStatus,
 				canEditItemProductId: true,
@@ -271,6 +275,7 @@ export const buildOrderActions = ({
 					canEditDeliveryAddress: false,
 					canEditExpectedDeliveryAt: false,
 					canEditStatus: canUpdateStatus,
+					canEditShippingStatus: canUpdateShippingStatus,
 					canCancelOrder,
 					canEditPaymentStatus: canUpdatePaymentStatus,
 					canEditItemProductId: false,
@@ -286,6 +291,7 @@ export const buildOrderActions = ({
 					canEditDeliveryAddress: false,
 					canEditExpectedDeliveryAt: false,
 					canEditStatus: false,
+					canEditShippingStatus: false,
 					canCancelOrder,
 					canEditPaymentStatus: canUpdatePaymentStatus,
 					canEditItemProductId: false,
@@ -300,6 +306,7 @@ export const buildOrderActions = ({
 		canEdit,
 		canDelete: hasPermission(permissions, { orders: ['delete'] }),
 		canUpdateStatus,
+		canUpdateShippingStatus,
 		canCancelOrder,
 		canUpdatePaymentStatus,
 		canAssign,

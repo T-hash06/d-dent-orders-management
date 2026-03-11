@@ -69,6 +69,7 @@ import { EditOrderDialog } from '@/features/orders/components/dialogs/edit-order
 import { ViewOrderDialog } from '@/features/orders/components/dialogs/view-order-dialog';
 import { getOrderColumns } from '@/features/orders/components/table/orders.columns';
 import type { OrderPaymentStatus } from '@/features/orders/domain/order-payment-status';
+import type { OrderShippingStatus } from '@/features/orders/domain/order-shipping-status';
 import type { OrderStatus } from '@/features/orders/domain/order-status';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
@@ -120,6 +121,7 @@ interface OrderStoreState {
 	rowSelection: Record<string, boolean>;
 	lateOnly: boolean;
 	statusFilter: OrderStatus | null;
+	shippingStatusFilter: OrderShippingStatus | null;
 	expectedDeliveryFrom: Date | null;
 	expectedDeliveryTo: Date | null;
 	isAdvancedFiltersOpen: boolean;
@@ -136,6 +138,7 @@ interface OrderStoreActions {
 	setRowSelection: OnChangeFn<Record<string, boolean>>;
 	setLateOnly: (lateOnly: boolean) => void;
 	setStatusFilter: (status: OrderStatus | null) => void;
+	setShippingStatusFilter: (shippingStatus: OrderShippingStatus | null) => void;
 	setExpectedDeliveryRange: (from: Date | null, to: Date | null) => void;
 	setIsAdvancedFiltersOpen: (isAdvancedFiltersOpen: boolean) => void;
 	setViewOrder: (order: Order | null) => void;
@@ -151,6 +154,7 @@ const useOrderStore = create<OrderStoreState & OrderStoreActions>((set) => ({
 	rowSelection: {},
 	lateOnly: false,
 	statusFilter: null,
+	shippingStatusFilter: null,
 	expectedDeliveryFrom: null,
 	expectedDeliveryTo: null,
 	isAdvancedFiltersOpen: false,
@@ -196,6 +200,8 @@ const useOrderStore = create<OrderStoreState & OrderStoreActions>((set) => ({
 	},
 	setLateOnly: (lateOnly) => set({ lateOnly }),
 	setStatusFilter: (statusFilter) => set({ statusFilter }),
+	setShippingStatusFilter: (shippingStatusFilter) =>
+		set({ shippingStatusFilter }),
 	setExpectedDeliveryRange: (expectedDeliveryFrom, expectedDeliveryTo) =>
 		set({ expectedDeliveryFrom, expectedDeliveryTo }),
 	setIsAdvancedFiltersOpen: (isAdvancedFiltersOpen) =>
@@ -268,6 +274,7 @@ const OrdersRouteTable = () => {
 		rowSelection,
 		lateOnly,
 		statusFilter,
+		shippingStatusFilter,
 		expectedDeliveryFrom,
 		expectedDeliveryTo,
 		isAdvancedFiltersOpen,
@@ -278,6 +285,7 @@ const OrdersRouteTable = () => {
 		setRowSelection,
 		setLateOnly,
 		setStatusFilter,
+		setShippingStatusFilter,
 		setExpectedDeliveryRange,
 		setIsAdvancedFiltersOpen,
 		setViewOrder,
@@ -292,6 +300,7 @@ const OrdersRouteTable = () => {
 			store.rowSelection,
 			store.lateOnly,
 			store.statusFilter,
+			store.shippingStatusFilter,
 			store.expectedDeliveryFrom,
 			store.expectedDeliveryTo,
 			store.isAdvancedFiltersOpen,
@@ -302,6 +311,7 @@ const OrdersRouteTable = () => {
 			store.setRowSelection,
 			store.setLateOnly,
 			store.setStatusFilter,
+			store.setShippingStatusFilter,
 			store.setExpectedDeliveryRange,
 			store.setIsAdvancedFiltersOpen,
 			store.setViewOrder,
@@ -314,6 +324,7 @@ const OrdersRouteTable = () => {
 		if (
 			!lateOnly &&
 			statusFilter === null &&
+			shippingStatusFilter === null &&
 			expectedDeliveryFrom === null &&
 			expectedDeliveryTo === null
 		) {
@@ -333,10 +344,17 @@ const OrdersRouteTable = () => {
 		return {
 			lateOnly: lateOnly ? true : undefined,
 			status: statusFilter ?? undefined,
+			shippingStatus: shippingStatusFilter ?? undefined,
 			expectedDeliveryFrom: expectedDeliveryFromFilter?.toISOString(),
 			expectedDeliveryTo: expectedDeliveryToFilter?.toISOString(),
 		};
-	}, [lateOnly, statusFilter, expectedDeliveryFrom, expectedDeliveryTo]);
+	}, [
+		lateOnly,
+		statusFilter,
+		shippingStatusFilter,
+		expectedDeliveryFrom,
+		expectedDeliveryTo,
+	]);
 
 	const getOrdersQueryKey = trpc.orders.getOrders.queryKey(getOrdersQueryInput);
 	const { data: orders = emptyOrdersFallback, isLoading } = useQuery(
@@ -358,6 +376,44 @@ const OrdersRouteTable = () => {
 						(old ?? []).map((o) =>
 							o.id === variables.orderId
 								? { ...o, status: variables.status }
+								: o,
+						),
+				);
+
+				return { previous };
+			},
+			onError: (error, _vars, context) => {
+				if (context?.previous) {
+					queryClient.setQueryData(getOrdersQueryKey, context.previous);
+				}
+
+				toast.error(
+					error.data?.zodError?.orderId?.message ?? m.editOrderFailed(),
+				);
+			},
+			onSuccess: () => {
+				toast.success(m.editOrderSuccess());
+				queryClient.invalidateQueries({
+					queryKey: trpc.orders.getOrders.queryKey(),
+				});
+			},
+		}),
+	);
+	const updateShippingStatusMutation = useMutation(
+		trpc.orders.updateOrderShippingStatus.mutationOptions({
+			onMutate: async (variables) => {
+				await queryClient.cancelQueries({
+					queryKey: getOrdersQueryKey,
+				});
+
+				const previous = queryClient.getQueryData<Order[]>(getOrdersQueryKey);
+
+				queryClient.setQueryData(
+					getOrdersQueryKey,
+					(old: Order[] | undefined) =>
+						(old ?? []).map((o) =>
+							o.id === variables.orderId
+								? { ...o, shippingStatus: variables.shippingStatus }
 								: o,
 						),
 				);
@@ -443,6 +499,15 @@ const OrdersRouteTable = () => {
 				onStatusChange: (order: Order, status: OrderStatus) => {
 					updateStatusMutation.mutate({ orderId: order.id, status });
 				},
+				onShippingStatusChange: (
+					order: Order,
+					shippingStatus: OrderShippingStatus,
+				) => {
+					updateShippingStatusMutation.mutate({
+						orderId: order.id,
+						shippingStatus,
+					});
+				},
 				onPaymentStatusChange: (
 					order: Order,
 					paymentStatus: OrderPaymentStatus,
@@ -458,6 +523,7 @@ const OrdersRouteTable = () => {
 			setEditOrder,
 			setDeleteOrder,
 			updateStatusMutation.mutate,
+			updateShippingStatusMutation.mutate,
 			updatePaymentStatusMutation.mutate,
 		],
 	);
@@ -515,6 +581,7 @@ const OrdersRouteTable = () => {
 		setGlobalFilter('');
 		setLateOnly(false);
 		setStatusFilter(null);
+		setShippingStatusFilter(null);
 		setExpectedDeliveryRange(null, null);
 		setColumnFilters([]);
 		setSorting(getSortingForOption(DEFAULT_ORDER_SORT_OPTION));
@@ -579,7 +646,7 @@ const OrdersRouteTable = () => {
 					</div>
 					<CollapsibleContent>
 						<div className="mt-3 border-t border-border pt-3">
-							<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+							<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
 								<Select
 									value={statusFilter ?? 'all'}
 									onValueChange={(value) =>
@@ -621,6 +688,48 @@ const OrdersRouteTable = () => {
 											</SelectItem>
 											<SelectItem value="cancelled">
 												{m.orderStatusCancelled()}
+											</SelectItem>
+										</SelectGroup>
+									</SelectContent>
+								</Select>
+								<Select
+									value={shippingStatusFilter ?? 'all'}
+									onValueChange={(value) =>
+										setShippingStatusFilter(
+											value === 'all' ? null : (value as OrderShippingStatus),
+										)
+									}
+									itemToStringLabel={(item) => {
+										switch (item) {
+											case 'all':
+												return m.orderShippingStatus();
+											case 'to_ship':
+												return m.orderShippingStatusToShip();
+											case 'shipped':
+												return m.orderShippingStatusShipped();
+											case 'delivered':
+												return m.orderShippingStatusDelivered();
+											default:
+												return item;
+										}
+									}}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue placeholder={m.orderShippingStatus()} />
+									</SelectTrigger>
+									<SelectContent alignItemWithTrigger={false}>
+										<SelectGroup>
+											<SelectItem value="all">
+												{m.orderShippingStatus()}
+											</SelectItem>
+											<SelectItem value="to_ship">
+												{m.orderShippingStatusToShip()}
+											</SelectItem>
+											<SelectItem value="shipped">
+												{m.orderShippingStatusShipped()}
+											</SelectItem>
+											<SelectItem value="delivered">
+												{m.orderShippingStatusDelivered()}
 											</SelectItem>
 										</SelectGroup>
 									</SelectContent>

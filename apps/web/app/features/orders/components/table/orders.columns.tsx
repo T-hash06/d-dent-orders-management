@@ -32,6 +32,7 @@ import type { Order } from '@/features/.server/orders/order.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import { getLocale } from '@/features/i18n/paraglide/runtime';
 import type { OrderPaymentStatus } from '@/features/orders/domain/order-payment-status';
+import type { OrderShippingStatus } from '@/features/orders/domain/order-shipping-status';
 import type { OrderStatus } from '@/features/orders/domain/order-status';
 import {
 	getOrderItemsCount,
@@ -44,6 +45,10 @@ type OrderColumnsProps = {
 	onEdit: (order: Order) => void;
 	onDelete: (order: Order) => void;
 	onStatusChange: (order: Order, status: OrderStatus) => void;
+	onShippingStatusChange: (
+		order: Order,
+		shippingStatus: OrderShippingStatus,
+	) => void;
 	onPaymentStatusChange: (
 		order: Order,
 		paymentStatus: OrderPaymentStatus,
@@ -57,6 +62,12 @@ const ORDER_STATUS_SORT_ORDER: Record<OrderStatus, number> = {
 	cancelled: 3,
 };
 
+const ORDER_SHIPPING_STATUS_SORT_ORDER: Record<OrderShippingStatus, number> = {
+	to_ship: 0,
+	shipped: 1,
+	delivered: 2,
+};
+
 const ORDER_PAYMENT_STATUS_SORT_ORDER: Record<OrderPaymentStatus, number> = {
 	pending: 0,
 	paid: 1,
@@ -67,6 +78,7 @@ export function getOrderColumns({
 	onEdit,
 	onDelete,
 	onStatusChange,
+	onShippingStatusChange,
 	onPaymentStatusChange,
 }: OrderColumnsProps): ColumnDef<Order>[] {
 	return [
@@ -191,6 +203,38 @@ export function getOrderColumns({
 			},
 		},
 		{
+			accessorKey: 'shippingStatus',
+			header: () => m.orderShippingStatus(),
+			meta: {
+				name: m.orderShippingStatus(),
+			},
+			sortingFn: (a, b) =>
+				ORDER_SHIPPING_STATUS_SORT_ORDER[a.original.shippingStatus] -
+				ORDER_SHIPPING_STATUS_SORT_ORDER[b.original.shippingStatus],
+			cell: ({ row }) => {
+				const shippingStatus = row.original.shippingStatus;
+				const label =
+					shippingStatus === 'to_ship'
+						? m.orderShippingStatusToShip()
+						: shippingStatus === 'shipped'
+							? m.orderShippingStatusShipped()
+							: m.orderShippingStatusDelivered();
+
+				const variant =
+					shippingStatus === 'delivered'
+						? 'default'
+						: shippingStatus === 'shipped'
+							? 'outline'
+							: 'secondary';
+
+				return (
+					<Badge variant={variant} className="font-normal text-xs">
+						{label}
+					</Badge>
+				);
+			},
+		},
+		{
 			accessorKey: 'expectedDeliveryAt',
 			header: () => m.orderExpectedDelivery(),
 			meta: {
@@ -287,6 +331,7 @@ export function getOrderColumns({
 				const canEdit = order.actions.canEdit;
 				const canDelete = order.actions.canDelete;
 				const canChangeStatus = order.actions.canUpdateStatus;
+				const canChangeShippingStatus = order.actions.canUpdateShippingStatus;
 				const canCancelOrder = order.actions.canCancelOrder;
 				const canChangePaymentStatus = order.actions.canUpdatePaymentStatus;
 				const currentStatus =
@@ -295,8 +340,14 @@ export function getOrderColumns({
 						: order.status === 'in_progress'
 							? m.orderStatusInProgress()
 							: order.status === 'cancelled'
-								? m.orderStatusCancelled()
+							? m.orderStatusCancelled()
 								: m.orderStatusPending();
+				const currentShippingStatus =
+					order.shippingStatus === 'to_ship'
+						? m.orderShippingStatusToShip()
+						: order.shippingStatus === 'shipped'
+							? m.orderShippingStatusShipped()
+							: m.orderShippingStatusDelivered();
 				const currentPaymentStatus =
 					order.paymentStatus === 'paid'
 						? m.orderPaymentStatusPaid()
@@ -387,6 +438,60 @@ export function getOrderColumns({
 																{m.orderStatusCancelled()}
 															</DropdownMenuRadioItem>
 														)}
+													</DropdownMenuRadioGroup>
+												</DropdownMenuSubContent>
+											</DropdownMenuPortal>
+										</DropdownMenuSub>
+									)}
+									{canChangeShippingStatus && (
+										<DropdownMenuSub>
+											<DropdownMenuSubTrigger>
+												<HugeiconsIcon
+													icon={
+														order.shippingStatus === 'delivered'
+															? CheckCircle
+															: order.shippingStatus === 'shipped'
+																? ArrowRight01Icon
+																: Clock01Icon
+													}
+													className="mr-2 h-4 w-4"
+												/>
+												{currentShippingStatus}
+											</DropdownMenuSubTrigger>
+											<DropdownMenuPortal>
+												<DropdownMenuSubContent>
+													<DropdownMenuRadioGroup
+														value={order.shippingStatus}
+														onValueChange={(value) => {
+															if (value !== order.shippingStatus) {
+																onShippingStatusChange(
+																	order,
+																	value as OrderShippingStatus,
+																);
+															}
+														}}
+													>
+														<DropdownMenuRadioItem value="to_ship">
+															<HugeiconsIcon
+																icon={Clock01Icon}
+																className="mr-2 h-4 w-4"
+															/>
+															{m.orderShippingStatusToShip()}
+														</DropdownMenuRadioItem>
+														<DropdownMenuRadioItem value="shipped">
+															<HugeiconsIcon
+																icon={ArrowRight01Icon}
+																className="mr-2 h-4 w-4"
+															/>
+															{m.orderShippingStatusShipped()}
+														</DropdownMenuRadioItem>
+														<DropdownMenuRadioItem value="delivered">
+															<HugeiconsIcon
+																icon={CheckCircle}
+																className="mr-2 h-4 w-4"
+															/>
+															{m.orderShippingStatusDelivered()}
+														</DropdownMenuRadioItem>
 													</DropdownMenuRadioGroup>
 												</DropdownMenuSubContent>
 											</DropdownMenuPortal>

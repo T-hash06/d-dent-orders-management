@@ -1,0 +1,1 @@
+ALTER TABLE `orders` ADD `shipping_status` text DEFAULT 'to_ship' NOT NULL;

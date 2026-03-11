@@ -98,6 +98,7 @@ export function EditOrderDialog({
 			deliveryAddress: order?.deliveryAddress ?? '',
 			expectedDeliveryAt: order?.expectedDeliveryAt ?? new Date(),
 			status: order?.status ?? 'pending',
+			shippingStatus: order?.shippingStatus ?? 'to_ship',
 			paymentStatus: order?.paymentStatus ?? 'pending',
 			items: order?.items ?? [
 				{ productId: '', quantity: 1, price: 0, details: '' },
@@ -114,6 +115,7 @@ export function EditOrderDialog({
 				deliveryAddress: parsedValue.deliveryAddress,
 				expectedDeliveryAt: parsedValue.expectedDeliveryAt,
 				status: parsedValue.status,
+				shippingStatus: parsedValue.shippingStatus,
 				paymentStatus: parsedValue.paymentStatus,
 				items: parsedValue.items,
 			});
@@ -129,6 +131,7 @@ export function EditOrderDialog({
 			deliveryAddress: order.deliveryAddress,
 			expectedDeliveryAt: order.expectedDeliveryAt,
 			status: order.status,
+			shippingStatus: order.shippingStatus,
 			paymentStatus: order.paymentStatus,
 			items: order.items.map((item) => ({
 				productId: item.productId,
@@ -157,6 +160,7 @@ export function EditOrderDialog({
 	const canEditExpectedDeliveryAt =
 		editableFields?.canEditExpectedDeliveryAt ?? false;
 	const canEditStatus = editableFields?.canEditStatus ?? false;
+	const canEditShippingStatus = editableFields?.canEditShippingStatus ?? false;
 	const canCancelOrder = editableFields?.canCancelOrder ?? false;
 	const canEditPaymentStatus = editableFields?.canEditPaymentStatus ?? false;
 	const canEditItemProductId = editableFields?.canEditItemProductId ?? false;
@@ -171,6 +175,7 @@ export function EditOrderDialog({
 		canEditDeliveryAddress,
 		canEditExpectedDeliveryAt,
 		canEditStatus,
+		canEditShippingStatus,
 		canCancelOrder,
 		canEditPaymentStatus,
 		canEditItemProductId,
@@ -426,6 +431,57 @@ export function EditOrderDialog({
 															{m.orderStatusCancelled()}
 														</SelectItem>
 													)}
+												</SelectGroup>
+											</SelectContent>
+										</Select>
+										<FieldError errors={field.state.meta.errors} />
+									</Field>
+								);
+							}}
+						</form.Field>
+
+						<form.Field name="shippingStatus">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>
+											{m.orderShippingStatus()}
+										</FieldLabel>
+										<Select
+											value={field.state.value}
+											onValueChange={field.handleChange}
+											disabled={isLoading || !canEditShippingStatus}
+											itemToStringLabel={(item) => {
+												switch (item) {
+													case 'to_ship':
+														return m.orderShippingStatusToShip();
+													case 'shipped':
+														return m.orderShippingStatusShipped();
+													case 'delivered':
+														return m.orderShippingStatusDelivered();
+													default:
+														return item;
+												}
+											}}
+										>
+											<SelectTrigger aria-invalid={isInvalid}>
+												<SelectValue
+													placeholder={m.orderShippingStatusPlaceholder()}
+												/>
+											</SelectTrigger>
+											<SelectContent alignItemWithTrigger={false}>
+												<SelectGroup>
+													<SelectItem value="to_ship">
+														{m.orderShippingStatusToShip()}
+													</SelectItem>
+													<SelectItem value="shipped">
+														{m.orderShippingStatusShipped()}
+													</SelectItem>
+													<SelectItem value="delivered">
+														{m.orderShippingStatusDelivered()}
+													</SelectItem>
 												</SelectGroup>
 											</SelectContent>
 										</Select>

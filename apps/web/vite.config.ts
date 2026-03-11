@@ -31,6 +31,10 @@ export default defineConfig({
 			babelConfig: {
 				presets: ['@babel/preset-typescript'],
 				plugins: [['babel-plugin-react-compiler', reactCompilerConfig]],
+				compact: true,
+				generatorOpts: {
+					minified: true,
+				},
 			},
 		}),
 		tsconfigPaths(),

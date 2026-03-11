@@ -1,27 +1,34 @@
 {
-	"version": "7",
-	"dialect": "sqlite",
-	"entries": [
-		{
-			"idx": 0,
-			"version": "6",
-			"when": 1772906903361,
-			"tag": "0000_romantic_starfox",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "6",
-			"when": 1772919405493,
-			"tag": "0001_amused_turbo",
-			"breakpoints": true
-		},
-		{
-			"idx": 2,
-			"version": "6",
-			"when": 1772947011499,
-			"tag": "0002_shocking_human_robot",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1772906903361,
+      "tag": "0000_romantic_starfox",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1772919405493,
+      "tag": "0001_amused_turbo",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1772947011499,
+      "tag": "0002_shocking_human_robot",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1773266298179,
+      "tag": "0003_romantic_amazoness",
+      "breakpoints": true
+    }
+  ]
 }

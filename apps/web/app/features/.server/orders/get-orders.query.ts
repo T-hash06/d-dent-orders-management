@@ -14,11 +14,13 @@ import {
 	isOrderLate,
 	ORDER_STATUS_VALUES,
 } from '@/features/orders/domain/order-status';
+import { ORDER_SHIPPING_STATUS_VALUES } from '@/features/orders/domain/order-shipping-status';
 
 const getOrdersInput = z
 	.object({
 		lateOnly: z.boolean().optional(),
 		status: z.enum(ORDER_STATUS_VALUES).optional(),
+		shippingStatus: z.enum(ORDER_SHIPPING_STATUS_VALUES).optional(),
 		expectedDeliveryFrom: z.coerce.date<string>().optional(),
 		expectedDeliveryTo: z.coerce.date<string>().optional(),
 	})
@@ -49,6 +51,9 @@ export const getOrders = procedures.auth
 						? lt(orders.expectedDeliveryAt, new Date())
 						: undefined,
 					input?.status ? eq(orders.status, input.status) : undefined,
+					input?.shippingStatus
+						? eq(orders.shippingStatus, input.shippingStatus)
+						: undefined,
 					input?.expectedDeliveryFrom
 						? gte(orders.expectedDeliveryAt, input.expectedDeliveryFrom)
 						: undefined,

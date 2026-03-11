@@ -11,6 +11,7 @@ import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.contex
 import { procedures } from '@/features/.server/trpc/trpc.init';
 import { m } from '@/features/i18n/paraglide/messages';
 import { ORDER_PAYMENT_STATUS_VALUES } from '@/features/orders/domain/order-payment-status';
+import { ORDER_SHIPPING_STATUS_VALUES } from '@/features/orders/domain/order-shipping-status';
 import { ORDER_STATUS_VALUES } from '@/features/orders/domain/order-status';
 
 const updateOrderItemInput = z.object({
@@ -82,6 +83,9 @@ const updateOrderInput = z.object({
 		error: () => m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
 	}),
 	status: z.enum(ORDER_STATUS_VALUES, {
+		error: () => m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
+	}),
+	shippingStatus: z.enum(ORDER_SHIPPING_STATUS_VALUES, {
 		error: () => m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
 	}),
 	paymentStatus: z.enum(ORDER_PAYMENT_STATUS_VALUES, {
@@ -175,6 +179,11 @@ export const updateOrder = procedures.auth
 					throw forbiddenError();
 				}
 			}
+			const isChangingShippingStatus =
+				input.shippingStatus !== currentOrder.shippingStatus;
+			if (isChangingShippingStatus && !editableFields.canEditShippingStatus) {
+				throw forbiddenError();
+			}
 			const isChangingPaymentStatus =
 				input.paymentStatus !== currentOrder.paymentStatus;
 			if (isChangingPaymentStatus && !editableFields.canEditPaymentStatus) {
@@ -218,6 +227,7 @@ export const updateOrder = procedures.auth
 					assignedToUserId: input.assignedToUserId ?? null,
 					expectedDeliveryAt: input.expectedDeliveryAt,
 					status: input.status,
+					shippingStatus: input.shippingStatus,
 					paymentStatus: input.paymentStatus,
 					deliveryAddress: input.deliveryAddress,
 					updatedById: ctx.user.id,

@@ -6,6 +6,7 @@ import {
 import * as z from 'zod';
 import { m } from '@/features/i18n/paraglide/messages';
 import { ORDER_PAYMENT_STATUS_VALUES } from '@/features/orders/domain/order-payment-status';
+import { ORDER_SHIPPING_STATUS_VALUES } from '@/features/orders/domain/order-shipping-status';
 import { ORDER_STATUS_VALUES } from '@/features/orders/domain/order-status';
 
 export const { fieldContext, formContext } = createFormHookContexts();
@@ -23,6 +24,7 @@ export const createOrderFormState = z.object({
 	deliveryAddress: z.string(),
 	expectedDeliveryAt: z.date(),
 	status: z.string().nullable(),
+	shippingStatus: z.string().nullable(),
 	paymentStatus: z.string().nullable(),
 	items: z.array(orderItemFormState),
 });
@@ -40,6 +42,9 @@ export const createOrderFormSchema = z.object({
 	}),
 	status: z.enum(ORDER_STATUS_VALUES, {
 		error: m.createOrderStatusRequired(),
+	}),
+	shippingStatus: z.enum(ORDER_SHIPPING_STATUS_VALUES, {
+		error: m.createOrderShippingStatusRequired(),
 	}),
 	paymentStatus: z.enum(ORDER_PAYMENT_STATUS_VALUES, {
 		error: m.createOrderPaymentStatusRequired(),
@@ -68,6 +73,7 @@ const DEFAULT_CREATE_ORDER_FORM_VALUES: z.infer<typeof createOrderFormState> = {
 	deliveryAddress: '',
 	expectedDeliveryAt: new Date(),
 	status: 'pending',
+	shippingStatus: 'to_ship',
 	paymentStatus: 'pending',
 	items: [{ productId: '', quantity: '1', price: '', details: '' }],
 };

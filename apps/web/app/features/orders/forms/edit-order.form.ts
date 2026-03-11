@@ -6,6 +6,7 @@ import {
 import * as z from 'zod';
 import { m } from '@/features/i18n/paraglide/messages';
 import { ORDER_PAYMENT_STATUS_VALUES } from '@/features/orders/domain/order-payment-status';
+import { ORDER_SHIPPING_STATUS_VALUES } from '@/features/orders/domain/order-shipping-status';
 import { ORDER_STATUS_VALUES } from '@/features/orders/domain/order-status';
 
 export const { fieldContext, formContext } = createFormHookContexts();
@@ -23,6 +24,7 @@ const editOrderFormState = z.object({
 	deliveryAddress: z.string(),
 	expectedDeliveryAt: z.date(),
 	status: z.string().nullable(),
+	shippingStatus: z.string().nullable(),
 	paymentStatus: z.string().nullable(),
 	items: z.array(orderItemFormState),
 });
@@ -40,6 +42,9 @@ export const editOrderFormSchema = z.object({
 	}),
 	status: z.enum(ORDER_STATUS_VALUES, {
 		error: m.editOrderStatusRequired(),
+	}),
+	shippingStatus: z.enum(ORDER_SHIPPING_STATUS_VALUES, {
+		error: m.editOrderShippingStatusRequired(),
 	}),
 	paymentStatus: z.enum(ORDER_PAYMENT_STATUS_VALUES, {
 		error: m.editOrderPaymentStatusRequired(),
@@ -68,6 +73,7 @@ export function editOrderFormOptions(defaultValues: {
 	deliveryAddress: string;
 	expectedDeliveryAt: Date;
 	status: string | null;
+	shippingStatus: string | null;
 	paymentStatus: string | null;
 	items: {
 		productId: string;
@@ -83,6 +89,7 @@ export function editOrderFormOptions(defaultValues: {
 			deliveryAddress: defaultValues.deliveryAddress,
 			expectedDeliveryAt: new Date(defaultValues.expectedDeliveryAt),
 			status: defaultValues.status,
+			shippingStatus: defaultValues.shippingStatus,
 			paymentStatus: defaultValues.paymentStatus,
 			items: defaultValues.items.map((item) => ({
 				productId: item.productId,

@@ -13,6 +13,7 @@ import { getOrderById } from '@/features/.server/orders/get-order-by-id.query';
 import { getOrders } from '@/features/.server/orders/get-orders.query';
 import { updateOrder } from '@/features/.server/orders/update-order.mutation';
 import { updateOrderPaymentStatus } from '@/features/.server/orders/update-order-payment-status.mutation';
+import { updateOrderShippingStatus } from '@/features/.server/orders/update-order-shipping-status.mutation';
 import { updateOrderStatus } from '@/features/.server/orders/update-order-status.mutation';
 import { createProduct } from '@/features/.server/products/create-product.mutation';
 import { deleteProduct } from '@/features/.server/products/delete-product.mutation';
@@ -54,6 +55,7 @@ const orders = t.router({
 	createOrder,
 	updateOrder,
 	updateOrderStatus,
+	updateOrderShippingStatus,
 	updateOrderPaymentStatus,
 	deleteOrder,
 

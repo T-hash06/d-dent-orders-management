@@ -10,6 +10,7 @@ import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.contex
 import { procedures } from '@/features/.server/trpc/trpc.init';
 import { m } from '@/features/i18n/paraglide/messages';
 import { ORDER_PAYMENT_STATUS_VALUES } from '@/features/orders/domain/order-payment-status';
+import { ORDER_SHIPPING_STATUS_VALUES } from '@/features/orders/domain/order-shipping-status';
 import { ORDER_STATUS_VALUES } from '@/features/orders/domain/order-status';
 
 const createOrderItemInput = z.object({
@@ -76,6 +77,9 @@ const createOrderInput = z.object({
 	status: z.enum(ORDER_STATUS_VALUES, {
 		error: () => m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
 	}),
+	shippingStatus: z.enum(ORDER_SHIPPING_STATUS_VALUES, {
+		error: () => m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
+	}),
 	paymentStatus: z.enum(ORDER_PAYMENT_STATUS_VALUES, {
 		error: () => m.validationError({}, { locale: getLocaleFromAsyncStorage() }),
 	}),
@@ -118,6 +122,7 @@ export const createOrder = procedures.auth
 					assignedToUserId: input.assignedToUserId ?? null,
 					expectedDeliveryAt: input.expectedDeliveryAt,
 					status: input.status,
+					shippingStatus: input.shippingStatus,
 					paymentStatus: input.paymentStatus,
 					deliveryAddress: input.deliveryAddress,
 					createdById: ctx.user.id,

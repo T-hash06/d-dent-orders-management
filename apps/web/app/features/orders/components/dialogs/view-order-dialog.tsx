@@ -15,6 +15,7 @@ import type { Order } from '@/features/.server/orders/order.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import { getLocale } from '@/features/i18n/paraglide/runtime';
 import type { OrderPaymentStatus } from '@/features/orders/domain/order-payment-status';
+import type { OrderShippingStatus } from '@/features/orders/domain/order-shipping-status';
 import type { OrderStatus } from '@/features/orders/domain/order-status';
 
 type ViewOrderDialogProps = {
@@ -89,6 +90,29 @@ const getPaymentStatusLabel = (status: OrderPaymentStatus) =>
 
 const getPaymentStatusVariant = (status: OrderPaymentStatus) =>
 	status === 'paid' ? ('default' as const) : ('secondary' as const);
+
+const getShippingStatusLabel = (status: OrderShippingStatus) => {
+	switch (status) {
+		case 'to_ship':
+			return m.orderShippingStatusToShip();
+		case 'shipped':
+			return m.orderShippingStatusShipped();
+		default:
+			return m.orderShippingStatusDelivered();
+	}
+};
+
+const getShippingStatusVariant = (status: OrderShippingStatus) => {
+	if (status === 'delivered') {
+		return 'default' as const;
+	}
+
+	if (status === 'shipped') {
+		return 'outline' as const;
+	}
+
+	return 'secondary' as const;
+};
 
 type DetailItemProps = {
 	label: string;
@@ -167,6 +191,17 @@ export function ViewOrderDialog({
 											</Badge>
 										) : null}
 									</div>
+								}
+							/>
+							<DetailItem
+								label={m.orderShippingStatus()}
+								value={
+									<Badge
+										variant={getShippingStatusVariant(order.shippingStatus)}
+										className="font-normal text-xs"
+									>
+										{getShippingStatusLabel(order.shippingStatus)}
+									</Badge>
 								}
 							/>
 							<DetailItem

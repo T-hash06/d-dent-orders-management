@@ -5,6 +5,7 @@ import { users } from '@/features/.server/auth/better-auth.schema';
 import { customers } from '@/features/.server/customers/customer.schema';
 import { products } from '@/features/.server/products/product.schema';
 import { ORDER_PAYMENT_STATUS_VALUES } from '@/features/orders/domain/order-payment-status';
+import { ORDER_SHIPPING_STATUS_VALUES } from '@/features/orders/domain/order-shipping-status';
 import { ORDER_STATUS_VALUES } from '@/features/orders/domain/order-status';
 
 export const orders = sqliteTable('orders', {
@@ -23,6 +24,11 @@ export const orders = sqliteTable('orders', {
 	})
 		.notNull()
 		.default('pending'),
+	shippingStatus: text('shipping_status', {
+		enum: ORDER_SHIPPING_STATUS_VALUES,
+	})
+		.notNull()
+		.default('to_ship'),
 	paymentStatus: text('payment_status', {
 		enum: ORDER_PAYMENT_STATUS_VALUES,
 	})
