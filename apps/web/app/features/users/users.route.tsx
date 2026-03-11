@@ -47,6 +47,7 @@ import { useTRPC } from '@/features/trpc/trpc.context';
 import { CreateUserDialog } from '@/features/users/components/dialogs/create-user-dialog';
 import { DeleteUserDialog } from '@/features/users/components/dialogs/delete-user-dialog';
 import { EditUserDialog } from '@/features/users/components/dialogs/edit-user-dialog';
+import { ViewUserDialog } from '@/features/users/components/dialogs/view-user-dialog';
 import { getUserColumns } from '@/features/users/components/table/users.columns';
 
 interface UserStoreState {
@@ -55,6 +56,7 @@ interface UserStoreState {
 	columnVisibility: VisibilityState;
 	rowSelection: Record<string, boolean>;
 	searchTerm: string;
+	viewUser: User | null;
 	editUser: User | null;
 	deleteUser: User | null;
 }
@@ -65,6 +67,7 @@ interface UserStoreActions {
 	setColumnVisibility: OnChangeFn<VisibilityState>;
 	setRowSelection: OnChangeFn<Record<string, boolean>>;
 	setSearchTerm: (searchTerm: string) => void;
+	setViewUser: (user: User | null) => void;
 	setEditUser: (user: User | null) => void;
 	setDeleteUser: (user: User | null) => void;
 }
@@ -75,6 +78,7 @@ const useUserStore = create<UserStoreState & UserStoreActions>((set) => ({
 	columnVisibility: {},
 	rowSelection: {},
 	searchTerm: '',
+	viewUser: null,
 	editUser: null,
 	deleteUser: null,
 	setSorting: (updater) => {
@@ -108,6 +112,7 @@ const useUserStore = create<UserStoreState & UserStoreActions>((set) => ({
 		});
 	},
 	setSearchTerm: (searchTerm) => set({ searchTerm }),
+	setViewUser: (viewUser) => set({ viewUser }),
 	setEditUser: (editUser) => set({ editUser }),
 	setDeleteUser: (deleteUser) => set({ deleteUser }),
 }));
@@ -163,6 +168,7 @@ const UsersRouteTable = () => {
 		setColumnVisibility,
 		setRowSelection,
 		setSearchTerm,
+		setViewUser,
 		setEditUser,
 		setDeleteUser,
 	] = useUserStore(
@@ -177,6 +183,7 @@ const UsersRouteTable = () => {
 			store.setColumnVisibility,
 			store.setRowSelection,
 			store.setSearchTerm,
+			store.setViewUser,
 			store.setEditUser,
 			store.setDeleteUser,
 		]),
@@ -230,6 +237,7 @@ const UsersRouteTable = () => {
 	const columns = useMemo(
 		() =>
 			getUserColumns({
+				onView: (user) => setViewUser(user),
 				onEdit: (user) => setEditUser(user),
 				onDelete: (user) => setDeleteUser(user),
 				onSetRole: (user, role) =>
@@ -238,6 +246,7 @@ const UsersRouteTable = () => {
 					setUserBanStatusMutation.mutate({ userId: user.id, banned }),
 			}),
 		[
+			setViewUser,
 			setEditUser,
 			setDeleteUser,
 			setUserRoleMutation.mutate,
@@ -416,17 +425,29 @@ const UsersRouteTable = () => {
 };
 
 const UserDialogs = () => {
-	const [editUser, deleteUser, setEditUser, setDeleteUser] = useUserStore(
-		useShallow((store) => [
-			store.editUser,
-			store.deleteUser,
-			store.setEditUser,
-			store.setDeleteUser,
-		]),
-	);
+	const [viewUser, editUser, deleteUser, setViewUser, setEditUser, setDeleteUser] =
+		useUserStore(
+			useShallow((store) => [
+				store.viewUser,
+				store.editUser,
+				store.deleteUser,
+				store.setViewUser,
+				store.setEditUser,
+				store.setDeleteUser,
+			]),
+		);
 
 	return (
 		<>
+			<ViewUserDialog
+				user={viewUser}
+				open={viewUser !== null}
+				onOpenChange={(open) => {
+					if (!open) {
+						setViewUser(null);
+					}
+				}}
+			/>
 			<EditUserDialog
 				user={editUser}
 				open={editUser !== null}

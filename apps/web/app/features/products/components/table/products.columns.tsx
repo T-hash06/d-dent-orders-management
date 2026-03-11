@@ -12,6 +12,7 @@ import {
 	DropdownMenuTrigger,
 } from '@full-stack-template/ui';
 import {
+	ArrowRight01Icon,
 	ArrowUpIcon,
 	Delete02Icon,
 	MoreHorizontalIcon,
@@ -24,11 +25,13 @@ import { m } from '@/features/i18n/paraglide/messages';
 import { getProductCategoryLabel } from '@/features/products/domain/product-category';
 
 type ProductColumnsProps = {
+	onView: (product: ProductPreview) => void;
 	onEdit: (product: ProductPreview) => void;
 	onDelete: (product: ProductPreview) => void;
 };
 
 export function getProductColumns({
+	onView,
 	onEdit,
 	onDelete,
 }: ProductColumnsProps): ColumnDef<ProductPreview>[] {
@@ -138,10 +141,6 @@ export function getProductColumns({
 				const canEdit = product.actions.canEdit;
 				const canDelete = product.actions.canDelete;
 
-				if (!canEdit && !canDelete) {
-					return null;
-				}
-
 				return (
 					<div className="flex justify-end">
 						<DropdownMenu>
@@ -155,6 +154,16 @@ export function getProductColumns({
 							<DropdownMenuContent align="end" className="w-max">
 								<DropdownMenuGroup>
 									<DropdownMenuLabel>{m.productActions()}</DropdownMenuLabel>
+									<DropdownMenuItem
+										onClick={() => onView(product)}
+										className="cursor-pointer"
+									>
+										<HugeiconsIcon
+											icon={ArrowRight01Icon}
+											className="mr-2 h-4 w-4"
+										/>
+										{m.viewDetails()}
+									</DropdownMenuItem>
 									{canEdit && (
 										<DropdownMenuItem
 											onClick={() => onEdit(product)}

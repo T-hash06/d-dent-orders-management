@@ -18,6 +18,7 @@ import {
 	DropdownMenuTrigger,
 } from '@full-stack-template/ui';
 import {
+	ArrowRight01Icon,
 	ArrowUpIcon,
 	CheckCircle,
 	Clock01Icon,
@@ -39,6 +40,7 @@ import {
 import { getOrderStatusIcon } from '@/features/orders/utils/order-status-icon';
 
 type OrderColumnsProps = {
+	onView: (order: Order) => void;
 	onEdit: (order: Order) => void;
 	onDelete: (order: Order) => void;
 	onStatusChange: (order: Order, status: OrderStatus) => void;
@@ -61,6 +63,7 @@ const ORDER_PAYMENT_STATUS_SORT_ORDER: Record<OrderPaymentStatus, number> = {
 };
 
 export function getOrderColumns({
+	onView,
 	onEdit,
 	onDelete,
 	onStatusChange,
@@ -286,8 +289,6 @@ export function getOrderColumns({
 				const canChangeStatus = order.actions.canUpdateStatus;
 				const canCancelOrder = order.actions.canCancelOrder;
 				const canChangePaymentStatus = order.actions.canUpdatePaymentStatus;
-				const hasAnyAction =
-					canEdit || canDelete || canChangeStatus || canChangePaymentStatus;
 				const currentStatus =
 					order.status === 'completed'
 						? m.orderStatusCompleted()
@@ -300,10 +301,6 @@ export function getOrderColumns({
 					order.paymentStatus === 'paid'
 						? m.orderPaymentStatusPaid()
 						: m.orderPaymentStatusPending();
-
-				if (!hasAnyAction) {
-					return null;
-				}
 
 				return (
 					<div className="flex justify-end">
@@ -318,6 +315,16 @@ export function getOrderColumns({
 							<DropdownMenuContent align="end" className="w-max">
 								<DropdownMenuGroup>
 									<DropdownMenuLabel>{m.orderActions()}</DropdownMenuLabel>
+									<DropdownMenuItem
+										onClick={() => onView(order)}
+										className="cursor-pointer"
+									>
+										<HugeiconsIcon
+											icon={ArrowRight01Icon}
+											className="mr-2 h-4 w-4"
+										/>
+										{m.viewDetails()}
+									</DropdownMenuItem>
 									{canEdit && (
 										<DropdownMenuItem
 											onClick={() => onEdit(order)}

@@ -135,7 +135,7 @@ export function EditUserDialog({
 						</Field>
 					</FieldGroup>
 
-					<DialogFooter className="gap-2 pt-2">
+					<DialogFooter className="gap-4">
 						<DialogClose
 							render={
 								<Button type="button" variant="outline" disabled={isLoading}>

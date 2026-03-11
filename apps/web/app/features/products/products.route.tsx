@@ -54,6 +54,7 @@ import { m } from '@/features/i18n/paraglide/messages';
 import { CreateProductDialog } from '@/features/products/components/dialogs/create-product-dialog';
 import { DeleteProductDialog } from '@/features/products/components/dialogs/delete-product-dialog';
 import { EditProductDialog } from '@/features/products/components/dialogs/edit-product-dialog';
+import { ViewProductDialog } from '@/features/products/components/dialogs/view-product-dialog';
 import { getProductColumns } from '@/features/products/components/table/products.columns';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
@@ -64,6 +65,7 @@ interface ProductStoreState {
 	rowSelection: Record<string, boolean>;
 	searchTerm: string;
 	categoryIdFilter: string | null;
+	viewProduct: ProductPreview | null;
 	editProduct: ProductPreview | null;
 	deleteProduct: ProductPreview | null;
 }
@@ -75,6 +77,7 @@ interface ProductStoreActions {
 	setRowSelection: OnChangeFn<Record<string, boolean>>;
 	setSearchTerm: (searchTerm: string) => void;
 	setCategoryIdFilter: (categoryIdFilter: string | null) => void;
+	setViewProduct: (product: ProductPreview | null) => void;
 	setEditProduct: (product: ProductPreview | null) => void;
 	setDeleteProduct: (product: ProductPreview | null) => void;
 }
@@ -87,6 +90,7 @@ const useProductStore = create<ProductStoreState & ProductStoreActions>(
 		rowSelection: {},
 		searchTerm: '',
 		categoryIdFilter: null,
+		viewProduct: null,
 		editProduct: null,
 		deleteProduct: null,
 		setSorting: (updater) => {
@@ -123,6 +127,7 @@ const useProductStore = create<ProductStoreState & ProductStoreActions>(
 		},
 		setSearchTerm: (searchTerm) => set({ searchTerm }),
 		setCategoryIdFilter: (categoryIdFilter) => set({ categoryIdFilter }),
+		setViewProduct: (viewProduct) => set({ viewProduct }),
 		setEditProduct: (editProduct) => set({ editProduct }),
 		setDeleteProduct: (deleteProduct) => set({ deleteProduct }),
 	}),
@@ -198,6 +203,7 @@ const ProductsRouteTable = () => {
 		setRowSelection,
 		setSearchTerm,
 		setCategoryIdFilter,
+		setViewProduct,
 		setEditProduct,
 		setDeleteProduct,
 	] = useProductStore(
@@ -214,6 +220,7 @@ const ProductsRouteTable = () => {
 			store.setRowSelection,
 			store.setSearchTerm,
 			store.setCategoryIdFilter,
+			store.setViewProduct,
 			store.setEditProduct,
 			store.setDeleteProduct,
 		]),
@@ -237,10 +244,11 @@ const ProductsRouteTable = () => {
 	const columns = useMemo(
 		() =>
 			getProductColumns({
+				onView: (product) => setViewProduct(product),
 				onEdit: (product) => setEditProduct(product),
 				onDelete: (product) => setDeleteProduct(product),
 			}),
-		[setEditProduct, setDeleteProduct],
+		[setViewProduct, setEditProduct, setDeleteProduct],
 	);
 
 	const table = useReactTable({
@@ -440,11 +448,20 @@ const ProductsRouteTable = () => {
 };
 
 const ProductDialogs = () => {
-	const [editProduct, deleteProduct, setEditProduct, setDeleteProduct] =
+	const [
+		viewProduct,
+		editProduct,
+		deleteProduct,
+		setViewProduct,
+		setEditProduct,
+		setDeleteProduct,
+	] =
 		useProductStore(
 			useShallow((store) => [
+				store.viewProduct,
 				store.editProduct,
 				store.deleteProduct,
+				store.setViewProduct,
 				store.setEditProduct,
 				store.setDeleteProduct,
 			]),
@@ -452,6 +469,13 @@ const ProductDialogs = () => {
 
 	return (
 		<>
+			<ViewProductDialog
+				product={viewProduct}
+				open={viewProduct !== null}
+				onOpenChange={(open) => {
+					if (!open) setViewProduct(null);
+				}}
+			/>
 			<EditProductDialog
 				product={editProduct}
 				open={editProduct !== null}

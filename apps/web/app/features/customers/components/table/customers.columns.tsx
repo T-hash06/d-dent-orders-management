@@ -11,6 +11,7 @@ import {
 	DropdownMenuTrigger,
 } from '@full-stack-template/ui';
 import {
+	ArrowRight01Icon,
 	ArrowUpIcon,
 	Delete02Icon,
 	MoreHorizontalIcon,
@@ -22,11 +23,13 @@ import type { Customer } from '@/features/.server/customers/customer.types';
 import { m } from '@/features/i18n/paraglide/messages';
 
 type CustomerColumnsProps = {
+	onView: (customer: Customer) => void;
 	onEdit: (customer: Customer) => void;
 	onDelete: (customer: Customer) => void;
 };
 
 export function getCustomerColumns({
+	onView,
 	onEdit,
 	onDelete,
 }: CustomerColumnsProps): ColumnDef<Customer>[] {
@@ -127,10 +130,6 @@ export function getCustomerColumns({
 				const canEdit = customer.actions.canEdit;
 				const canDelete = customer.actions.canDelete;
 
-				if (!canEdit && !canDelete) {
-					return null;
-				}
-
 				return (
 					<div className="flex justify-end">
 						<DropdownMenu>
@@ -144,6 +143,16 @@ export function getCustomerColumns({
 							<DropdownMenuContent align="end" className="w-max">
 								<DropdownMenuGroup>
 									<DropdownMenuLabel>{m.customerActions()}</DropdownMenuLabel>
+									<DropdownMenuItem
+										onClick={() => onView(customer)}
+										className="cursor-pointer"
+									>
+										<HugeiconsIcon
+											icon={ArrowRight01Icon}
+											className="mr-2 h-4 w-4"
+										/>
+										{m.viewDetails()}
+									</DropdownMenuItem>
 									{canEdit && (
 										<DropdownMenuItem
 											onClick={() => onEdit(customer)}

@@ -66,6 +66,7 @@ import { getLocale } from '@/features/i18n/paraglide/runtime';
 import { CreateOrderDialog } from '@/features/orders/components/dialogs/create-order-dialog';
 import { DeleteOrderDialog } from '@/features/orders/components/dialogs/delete-order-dialog';
 import { EditOrderDialog } from '@/features/orders/components/dialogs/edit-order-dialog';
+import { ViewOrderDialog } from '@/features/orders/components/dialogs/view-order-dialog';
 import { getOrderColumns } from '@/features/orders/components/table/orders.columns';
 import type { OrderPaymentStatus } from '@/features/orders/domain/order-payment-status';
 import type { OrderStatus } from '@/features/orders/domain/order-status';
@@ -122,6 +123,7 @@ interface OrderStoreState {
 	expectedDeliveryFrom: Date | null;
 	expectedDeliveryTo: Date | null;
 	isAdvancedFiltersOpen: boolean;
+	viewOrder: Order | null;
 	editOrder: Order | null;
 	deleteOrder: Order | null;
 }
@@ -136,6 +138,7 @@ interface OrderStoreActions {
 	setStatusFilter: (status: OrderStatus | null) => void;
 	setExpectedDeliveryRange: (from: Date | null, to: Date | null) => void;
 	setIsAdvancedFiltersOpen: (isAdvancedFiltersOpen: boolean) => void;
+	setViewOrder: (order: Order | null) => void;
 	setEditOrder: (order: Order | null) => void;
 	setDeleteOrder: (order: Order | null) => void;
 }
@@ -151,6 +154,7 @@ const useOrderStore = create<OrderStoreState & OrderStoreActions>((set) => ({
 	expectedDeliveryFrom: null,
 	expectedDeliveryTo: null,
 	isAdvancedFiltersOpen: false,
+	viewOrder: null,
 	editOrder: null,
 	deleteOrder: null,
 	setSorting: (updater) => {
@@ -196,6 +200,7 @@ const useOrderStore = create<OrderStoreState & OrderStoreActions>((set) => ({
 		set({ expectedDeliveryFrom, expectedDeliveryTo }),
 	setIsAdvancedFiltersOpen: (isAdvancedFiltersOpen) =>
 		set({ isAdvancedFiltersOpen }),
+	setViewOrder: (viewOrder) => set({ viewOrder }),
 	setEditOrder: (editOrder) => set({ editOrder }),
 	setDeleteOrder: (deleteOrder) => set({ deleteOrder }),
 }));
@@ -275,6 +280,7 @@ const OrdersRouteTable = () => {
 		setStatusFilter,
 		setExpectedDeliveryRange,
 		setIsAdvancedFiltersOpen,
+		setViewOrder,
 		setEditOrder,
 		setDeleteOrder,
 	] = useOrderStore(
@@ -298,6 +304,7 @@ const OrdersRouteTable = () => {
 			store.setStatusFilter,
 			store.setExpectedDeliveryRange,
 			store.setIsAdvancedFiltersOpen,
+			store.setViewOrder,
 			store.setEditOrder,
 			store.setDeleteOrder,
 		]),
@@ -430,6 +437,7 @@ const OrdersRouteTable = () => {
 	const columns = useMemo(
 		() =>
 			getOrderColumns({
+				onView: (order: Order) => setViewOrder(order),
 				onEdit: (order: Order) => setEditOrder(order),
 				onDelete: (order: Order) => setDeleteOrder(order),
 				onStatusChange: (order: Order, status: OrderStatus) => {
@@ -446,6 +454,7 @@ const OrdersRouteTable = () => {
 				},
 			}),
 		[
+			setViewOrder,
 			setEditOrder,
 			setDeleteOrder,
 			updateStatusMutation.mutate,
@@ -878,17 +887,27 @@ const OrdersRouteTable = () => {
 };
 
 const OrderDialogs = () => {
-	const [editOrder, deleteOrder, setEditOrder, setDeleteOrder] = useOrderStore(
-		useShallow((store) => [
-			store.editOrder,
-			store.deleteOrder,
-			store.setEditOrder,
-			store.setDeleteOrder,
-		]),
-	);
+	const [viewOrder, editOrder, deleteOrder, setViewOrder, setEditOrder, setDeleteOrder] =
+		useOrderStore(
+			useShallow((store) => [
+				store.viewOrder,
+				store.editOrder,
+				store.deleteOrder,
+				store.setViewOrder,
+				store.setEditOrder,
+				store.setDeleteOrder,
+			]),
+		);
 
 	return (
 		<>
+			<ViewOrderDialog
+				order={viewOrder}
+				open={viewOrder !== null}
+				onOpenChange={(open) => {
+					if (!open) setViewOrder(null);
+				}}
+			/>
 			<EditOrderDialog
 				order={editOrder}
 				open={editOrder !== null}

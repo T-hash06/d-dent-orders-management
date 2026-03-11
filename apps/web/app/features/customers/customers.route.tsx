@@ -44,6 +44,7 @@ import { useSession } from '@/features/better-auth/better-auth.context';
 import { CreateCustomerDialog } from '@/features/customers/components/dialogs/create-customer-dialog';
 import { DeleteCustomerDialog } from '@/features/customers/components/dialogs/delete-customer-dialog';
 import { EditCustomerDialog } from '@/features/customers/components/dialogs/edit-customer-dialog';
+import { ViewCustomerDialog } from '@/features/customers/components/dialogs/view-customer-dialog';
 import { getCustomerColumns } from '@/features/customers/components/table/customers.columns';
 import { m } from '@/features/i18n/paraglide/messages';
 import { useTRPC } from '@/features/trpc/trpc.context';
@@ -53,6 +54,7 @@ interface CustomerStoreState {
 	columnFilters: ColumnFiltersState;
 	columnVisibility: VisibilityState;
 	rowSelection: Record<string, boolean>;
+	viewCustomer: Customer | null;
 	editCustomer: Customer | null;
 	deleteCustomer: Customer | null;
 }
@@ -62,6 +64,7 @@ interface CustomerStoreActions {
 	setColumnFilters: OnChangeFn<ColumnFiltersState>;
 	setColumnVisibility: OnChangeFn<VisibilityState>;
 	setRowSelection: OnChangeFn<Record<string, boolean>>;
+	setViewCustomer: (customer: Customer | null) => void;
 	setEditCustomer: (customer: Customer | null) => void;
 	setDeleteCustomer: (customer: Customer | null) => void;
 }
@@ -72,6 +75,7 @@ const useCustomerStore = create<CustomerStoreState & CustomerStoreActions>(
 		columnFilters: [],
 		columnVisibility: {},
 		rowSelection: {},
+		viewCustomer: null,
 		editCustomer: null,
 		deleteCustomer: null,
 		setSorting: (updater) => {
@@ -106,6 +110,7 @@ const useCustomerStore = create<CustomerStoreState & CustomerStoreActions>(
 				return { rowSelection: newRowSelection };
 			});
 		},
+		setViewCustomer: (viewCustomer) => set({ viewCustomer }),
 		setEditCustomer: (editCustomer) => set({ editCustomer }),
 		setDeleteCustomer: (deleteCustomer) => set({ deleteCustomer }),
 	}),
@@ -165,6 +170,7 @@ const CustomersRouteTable = () => {
 		setColumnFilters,
 		setColumnVisibility,
 		setRowSelection,
+		setViewCustomer,
 		setEditCustomer,
 		setDeleteCustomer,
 	] = useCustomerStore(
@@ -177,6 +183,7 @@ const CustomersRouteTable = () => {
 			store.setColumnFilters,
 			store.setColumnVisibility,
 			store.setRowSelection,
+			store.setViewCustomer,
 			store.setEditCustomer,
 			store.setDeleteCustomer,
 		]),
@@ -185,10 +192,11 @@ const CustomersRouteTable = () => {
 	const columns = useMemo(
 		() =>
 			getCustomerColumns({
+				onView: (cust) => setViewCustomer(cust),
 				onEdit: (cust) => setEditCustomer(cust),
 				onDelete: (cust) => setDeleteCustomer(cust),
 			}),
-		[setEditCustomer, setDeleteCustomer],
+		[setViewCustomer, setEditCustomer, setDeleteCustomer],
 	);
 
 	const table = useReactTable({
@@ -364,11 +372,20 @@ const CustomersRouteTable = () => {
 };
 
 const CustomerDialogs = () => {
-	const [editCustomer, deleteCustomer, setEditCustomer, setDeleteCustomer] =
+	const [
+		viewCustomer,
+		editCustomer,
+		deleteCustomer,
+		setViewCustomer,
+		setEditCustomer,
+		setDeleteCustomer,
+	] =
 		useCustomerStore(
 			useShallow((store) => [
+				store.viewCustomer,
 				store.editCustomer,
 				store.deleteCustomer,
+				store.setViewCustomer,
 				store.setEditCustomer,
 				store.setDeleteCustomer,
 			]),
@@ -376,6 +393,13 @@ const CustomerDialogs = () => {
 
 	return (
 		<>
+			<ViewCustomerDialog
+				customer={viewCustomer}
+				open={viewCustomer !== null}
+				onOpenChange={(open) => {
+					if (!open) setViewCustomer(null);
+				}}
+			/>
 			<EditCustomerDialog
 				customer={editCustomer}
 				open={editCustomer !== null}

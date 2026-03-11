@@ -234,7 +234,7 @@ export function EditCustomerDialog({
 						</form.Field>
 					</FieldGroup>
 
-					<DialogFooter className="gap-2 pt-2">
+					<DialogFooter className="gap-2">
 						<DialogClose
 							render={
 								<Button type="button" variant="outline" disabled={isLoading}>

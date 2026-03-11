@@ -20,6 +20,7 @@ import {
 import {
 	AccountRecoveryIcon,
 	AccountSettingIcon,
+	ArrowRight01Icon,
 	ArrowUpIcon,
 	Delete02Icon,
 	MoreHorizontalIcon,
@@ -50,6 +51,7 @@ function getUserRoleLabel(role: string | null): string {
 }
 
 type UserColumnsProps = {
+	onView: (user: User) => void;
 	onEdit: (user: User) => void;
 	onDelete: (user: User) => void;
 	onSetRole: (user: User, role: UserRole) => void;
@@ -57,6 +59,7 @@ type UserColumnsProps = {
 };
 
 export function getUserColumns({
+	onView,
 	onEdit,
 	onDelete,
 	onSetRole,
@@ -166,12 +169,7 @@ export function getUserColumns({
 				const canDelete = user.actions.canDelete;
 				const canSetRole = user.actions.canSetRole;
 				const canBan = user.actions.canBan;
-				const hasAnyAction = canEdit || canDelete || canSetRole || canBan;
 				const currentRole = isUserRole(user.role) ? user.role : undefined;
-
-				if (!hasAnyAction) {
-					return null;
-				}
 
 				return (
 					<div className="flex justify-end">
@@ -186,6 +184,16 @@ export function getUserColumns({
 							<DropdownMenuContent align="end" className="w-max">
 								<DropdownMenuGroup>
 									<DropdownMenuLabel>{m.userActions()}</DropdownMenuLabel>
+									<DropdownMenuItem
+										onClick={() => onView(user)}
+										className="cursor-pointer"
+									>
+										<HugeiconsIcon
+											icon={ArrowRight01Icon}
+											className="mr-2 h-4 w-4"
+										/>
+										{m.viewDetails()}
+									</DropdownMenuItem>
 									{canEdit && (
 										<DropdownMenuItem
 											onClick={() => onEdit(user)}
