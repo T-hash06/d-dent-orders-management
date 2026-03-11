@@ -12,7 +12,7 @@ import {
 	ChartTooltipContent,
 	Empty,
 	Skeleton,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { Link } from 'react-router';

@@ -8,7 +8,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 	toast,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ProductPreview } from '@/features/.server/products/product.types';
 import { m } from '@/features/i18n/paraglide/messages';

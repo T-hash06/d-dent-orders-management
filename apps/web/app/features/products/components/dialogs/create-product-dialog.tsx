@@ -15,7 +15,7 @@ import {
 	Input,
 	Spinner,
 	toast,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import { Plus } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';

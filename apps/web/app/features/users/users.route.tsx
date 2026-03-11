@@ -15,7 +15,7 @@ import {
 	TableHeader,
 	TableRow,
 	toast,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import {
 	ArrowLeft01Icon,
 	ArrowRight01Icon,
@@ -425,17 +425,23 @@ const UsersRouteTable = () => {
 };
 
 const UserDialogs = () => {
-	const [viewUser, editUser, deleteUser, setViewUser, setEditUser, setDeleteUser] =
-		useUserStore(
-			useShallow((store) => [
-				store.viewUser,
-				store.editUser,
-				store.deleteUser,
-				store.setViewUser,
-				store.setEditUser,
-				store.setDeleteUser,
-			]),
-		);
+	const [
+		viewUser,
+		editUser,
+		deleteUser,
+		setViewUser,
+		setEditUser,
+		setDeleteUser,
+	] = useUserStore(
+		useShallow((store) => [
+			store.viewUser,
+			store.editUser,
+			store.deleteUser,
+			store.setViewUser,
+			store.setEditUser,
+			store.setDeleteUser,
+		]),
+	);
 
 	return (
 		<>

@@ -1,5 +1,5 @@
 {
-	"name": "@full-stack-template/web",
+	"name": "@d-dentaditamentos/web",
 	"private": true,
 	"type": "module",
 	"scripts": {
@@ -17,7 +17,7 @@
 		"type-check": "react-router typegen && tsc"
 	},
 	"dependencies": {
-		"@full-stack-template/ui": "workspace:*",
+		"@d-dentaditamentos/ui": "workspace:*",
 		"@hugeicons/core-free-icons": "^4.0.0",
 		"@hugeicons/react": "^1.1.5",
 		"@libsql/client": "^0.17.0",

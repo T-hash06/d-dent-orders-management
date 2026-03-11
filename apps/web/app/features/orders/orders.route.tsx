@@ -30,7 +30,7 @@ import {
 	TableHeader,
 	TableRow,
 	toast,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import {
 	ArrowLeft01Icon,
 	ArrowRight01Icon,
@@ -887,17 +887,23 @@ const OrdersRouteTable = () => {
 };
 
 const OrderDialogs = () => {
-	const [viewOrder, editOrder, deleteOrder, setViewOrder, setEditOrder, setDeleteOrder] =
-		useOrderStore(
-			useShallow((store) => [
-				store.viewOrder,
-				store.editOrder,
-				store.deleteOrder,
-				store.setViewOrder,
-				store.setEditOrder,
-				store.setDeleteOrder,
-			]),
-		);
+	const [
+		viewOrder,
+		editOrder,
+		deleteOrder,
+		setViewOrder,
+		setEditOrder,
+		setDeleteOrder,
+	] = useOrderStore(
+		useShallow((store) => [
+			store.viewOrder,
+			store.editOrder,
+			store.deleteOrder,
+			store.setViewOrder,
+			store.setEditOrder,
+			store.setDeleteOrder,
+		]),
+	);
 
 	return (
 		<>

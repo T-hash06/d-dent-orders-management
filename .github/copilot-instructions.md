@@ -18,25 +18,25 @@ pnpm clean        # turbo run clean
 ### Target a single workspace
 ```bash
 # Web app (React Router SSR)
-pnpm --filter @full-stack-template/web dev
-pnpm --filter @full-stack-template/web build
-pnpm --filter @full-stack-template/web type-check
-pnpm --filter @full-stack-template/web start
+pnpm --filter @d-dentaditamentos/web dev
+pnpm --filter @d-dentaditamentos/web build
+pnpm --filter @d-dentaditamentos/web type-check
+pnpm --filter @d-dentaditamentos/web start
 
 # UI package (Vite library)
-pnpm --filter @full-stack-template/ui build
-pnpm --filter @full-stack-template/ui type-check
+pnpm --filter @d-dentaditamentos/ui build
+pnpm --filter @d-dentaditamentos/ui type-check
 ```
 
 ### Web app data/i18n commands
 ```bash
-pnpm --filter @full-stack-template/web drizzle-kit:generate
-pnpm --filter @full-stack-template/web drizzle-kit:migrate
-pnpm --filter @full-stack-template/web drizzle-kit:push
-pnpm --filter @full-stack-template/web drizzle-kit:seed
-pnpm --filter @full-stack-template/web drizzle-kit:studio
-pnpm --filter @full-stack-template/web inlang
-pnpm --filter @full-stack-template/web machine-translate
+pnpm --filter @d-dentaditamentos/web drizzle-kit:generate
+pnpm --filter @d-dentaditamentos/web drizzle-kit:migrate
+pnpm --filter @d-dentaditamentos/web drizzle-kit:push
+pnpm --filter @d-dentaditamentos/web drizzle-kit:seed
+pnpm --filter @d-dentaditamentos/web drizzle-kit:studio
+pnpm --filter @d-dentaditamentos/web inlang
+pnpm --filter @d-dentaditamentos/web machine-translate
 ```
 
 ### Tests
@@ -66,7 +66,7 @@ pnpm --filter @full-stack-template/web machine-translate
   - source config in `app/features/i18n/project.inlang/`
   - generated runtime/messages in `app/features/i18n/paraglide/` (generated files, do not hand-edit)
   - middleware added in `app/root.tsx`.
-- `packages/ui` is a shared component library exported as `@full-stack-template/ui`; app code imports UI primitives/components from this package.
+- `packages/ui` is a shared component library exported as `@d-dentaditamentos/ui`; app code imports UI primitives/components from this package.
 
 ## Key repository conventions
 
@@ -92,7 +92,7 @@ pnpm --filter @full-stack-template/web machine-translate
   - for CSS properties/tokens already defined in `packages/ui/src/global.css`, use those theme variables/tailwind tokens (`bg-background`, `text-foreground`, `border-border`, `ring-ring`, etc.) instead of hardcoded color/spacing/shadow values.
   - only use custom values when the needed property/token is not defined in `packages/ui/src/global.css`.
 - **shadcn composition priority**:
-  - prefer using existing components and compositions exported by `packages/ui/src/index.ts` (`@full-stack-template/ui`) before creating custom UI primitives.
+  - prefer using existing components and compositions exported by `packages/ui/src/index.ts` (`@d-dentaditamentos/ui`) before creating custom UI primitives.
   - only build a new primitive/composition when no suitable export exists.
 - **Formatting/linting** uses Biome from repo root:
   - tabs for indentation

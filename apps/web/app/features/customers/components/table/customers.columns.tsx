@@ -9,7 +9,7 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import {
 	ArrowRight01Icon,
 	ArrowUpIcon,

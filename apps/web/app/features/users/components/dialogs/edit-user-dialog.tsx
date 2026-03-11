@@ -14,7 +14,7 @@ import {
 	Input,
 	Spinner,
 	toast,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type SubmitEvent, useCallback, useEffect } from 'react';
 import type { User } from '@/features/.server/users/user.types';

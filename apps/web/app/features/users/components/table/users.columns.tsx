@@ -16,7 +16,7 @@ import {
 	DropdownMenuSubContent,
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import {
 	AccountRecoveryIcon,
 	AccountSettingIcon,

@@ -1,5 +1,5 @@
 {
-	"name": "full-stack-template",
+	"name": "d-dentaditamentos",
 	"private": true,
 	"scripts": {
 		"build": "turbo run build",

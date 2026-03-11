@@ -18,7 +18,7 @@ import {
 	Separator,
 	toast,
 	Link as UiLink,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import {
 	Computer,
 	Moon,

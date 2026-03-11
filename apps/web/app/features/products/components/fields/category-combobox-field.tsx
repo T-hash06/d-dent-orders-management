@@ -11,7 +11,7 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import { Plus } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useState } from 'react';

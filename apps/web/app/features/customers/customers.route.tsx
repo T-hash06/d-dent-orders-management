@@ -14,7 +14,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import {
 	ArrowLeft01Icon,
 	ArrowRight01Icon,
@@ -379,17 +379,16 @@ const CustomerDialogs = () => {
 		setViewCustomer,
 		setEditCustomer,
 		setDeleteCustomer,
-	] =
-		useCustomerStore(
-			useShallow((store) => [
-				store.viewCustomer,
-				store.editCustomer,
-				store.deleteCustomer,
-				store.setViewCustomer,
-				store.setEditCustomer,
-				store.setDeleteCustomer,
-			]),
-		);
+	] = useCustomerStore(
+		useShallow((store) => [
+			store.viewCustomer,
+			store.editCustomer,
+			store.deleteCustomer,
+			store.setViewCustomer,
+			store.setEditCustomer,
+			store.setDeleteCustomer,
+		]),
+	);
 
 	return (
 		<>

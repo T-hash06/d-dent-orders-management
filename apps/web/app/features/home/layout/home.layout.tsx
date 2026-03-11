@@ -26,7 +26,7 @@ import {
 	SidebarRail,
 	SidebarSeparator,
 	SidebarTrigger,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import {
 	CaduceusIcon,
 	Computer,

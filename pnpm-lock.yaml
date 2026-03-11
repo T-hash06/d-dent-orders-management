@@ -20,7 +20,7 @@ importers:
 
   apps/web:
     dependencies:
-      '@full-stack-template/ui':
+      '@d-dentaditamentos/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@hugeicons/core-free-icons':

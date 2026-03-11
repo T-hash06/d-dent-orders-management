@@ -20,7 +20,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import {
 	ArrowLeft01Icon,
 	ArrowRight01Icon,
@@ -455,17 +455,16 @@ const ProductDialogs = () => {
 		setViewProduct,
 		setEditProduct,
 		setDeleteProduct,
-	] =
-		useProductStore(
-			useShallow((store) => [
-				store.viewProduct,
-				store.editProduct,
-				store.deleteProduct,
-				store.setViewProduct,
-				store.setEditProduct,
-				store.setDeleteProduct,
-			]),
-		);
+	] = useProductStore(
+		useShallow((store) => [
+			store.viewProduct,
+			store.editProduct,
+			store.deleteProduct,
+			store.setViewProduct,
+			store.setEditProduct,
+			store.setDeleteProduct,
+		]),
+	);
 
 	return (
 		<>

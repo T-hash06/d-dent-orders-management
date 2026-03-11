@@ -5,7 +5,7 @@ import {
 	Separator,
 	Toaster,
 	TooltipProvider,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import { Alert01Icon, SearchRemoveIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ThemeProvider } from 'next-themes';

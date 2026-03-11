@@ -1,4 +1,4 @@
-import { cn } from '@full-stack-template/ui';
+import { cn } from '@d-dentaditamentos/ui';
 
 export interface StatItem {
 	label: string;

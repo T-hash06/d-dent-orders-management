@@ -8,7 +8,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Separator,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import type { ReactNode } from 'react';
 import type { Customer } from '@/features/.server/customers/customer.types';
 import { m } from '@/features/i18n/paraglide/messages';

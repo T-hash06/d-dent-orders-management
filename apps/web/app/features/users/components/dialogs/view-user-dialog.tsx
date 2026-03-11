@@ -9,7 +9,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Separator,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import type { ReactNode } from 'react';
 import type { User } from '@/features/.server/users/user.types';
 import { m } from '@/features/i18n/paraglide/messages';

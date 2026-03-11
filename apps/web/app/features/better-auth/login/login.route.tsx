@@ -20,7 +20,7 @@ import {
 	Input,
 	toast,
 	Link as UiLink,
-} from '@full-stack-template/ui';
+} from '@d-dentaditamentos/ui';
 import { Computer, Moon, Sun } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useTheme } from 'next-themes';
