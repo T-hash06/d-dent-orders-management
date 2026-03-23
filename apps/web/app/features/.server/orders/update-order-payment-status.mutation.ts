@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import * as z from 'zod';
-import { assertHasPermission } from '@/features/.server/auth/authorization.lib';
+import { assertCan } from '@/features/.server/auth/authorization.lib';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import { orders } from '@/features/.server/orders/order.schema';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
@@ -25,9 +25,7 @@ const updateOrderPaymentStatusInput = z.object({
 export const updateOrderPaymentStatus = procedures.auth
 	.input(updateOrderPaymentStatusInput)
 	.mutation(async ({ input, ctx }) => {
-		assertHasPermission(ctx.permissions, {
-			orders: ['update-payment-status'],
-		});
+		assertCan(ctx.ability, 'update-payment-status', 'Order');
 
 		return db.transaction(async (tx) => {
 			const [order] = await tx

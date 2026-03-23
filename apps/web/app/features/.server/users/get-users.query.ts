@@ -1,7 +1,7 @@
 import { asc, like, or } from 'drizzle-orm';
 import * as z from 'zod';
 import {
-	assertHasPermission,
+	assertCan,
 	buildUserActions,
 } from '@/features/.server/auth/authorization.lib';
 import { users } from '@/features/.server/auth/better-auth.schema';
@@ -17,7 +17,7 @@ const getUsersInput = z
 export const getUsers = procedures.auth
 	.input(getUsersInput)
 	.query(async ({ input, ctx }) => {
-		assertHasPermission(ctx.permissions, { user: ['list'] });
+		assertCan(ctx.ability, 'list', 'User');
 
 		const normalizedSearch = input?.search?.trim();
 		const rows = await db
@@ -46,7 +46,7 @@ export const getUsers = procedures.auth
 		return rows.map((user) => ({
 			...user,
 			actions: buildUserActions({
-				permissions: ctx.permissions,
+				ability: ctx.ability,
 				currentUserId: ctx.user.id,
 				targetUserId: user.id,
 			}),

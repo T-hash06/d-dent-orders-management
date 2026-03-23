@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import {
-	assertHasPermission,
+	assertCanAny,
 	buildOrderActions,
 } from '@/features/.server/auth/authorization.lib';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
@@ -8,9 +8,13 @@ import { orders } from '@/features/.server/orders/order.schema';
 import { procedures } from '@/features/.server/trpc/trpc.init';
 
 export const getAssignedOrders = procedures.auth.query(async ({ ctx }) => {
-	assertHasPermission(ctx.permissions, {
-		orders: ['list-assigned'],
-	});
+	assertCanAny(ctx.ability, [
+		{
+			action: 'list-assigned',
+			subjectType: 'Order',
+			subjectValue: { assignedToUserId: ctx.user.id },
+		},
+	]);
 
 	const userId = ctx.user.id;
 
@@ -22,7 +26,7 @@ export const getAssignedOrders = procedures.auth.query(async ({ ctx }) => {
 	return assignedOrders.map((order) => ({
 		...order,
 		actions: buildOrderActions({
-			permissions: ctx.permissions,
+			ability: ctx.ability,
 			userId,
 			assignedToUserId: order.assignedToUserId,
 		}),

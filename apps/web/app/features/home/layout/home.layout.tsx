@@ -43,9 +43,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useTheme } from 'next-themes';
 import { Link, Outlet, redirect, useLocation } from 'react-router';
 import {
-	EMPTY_PERMISSIONS,
-	getPermissionsByRole,
-	type Permissions,
+	EMPTY_ROLE_CAPABILITIES,
+	getRoleCapabilitiesByRole,
+	type SessionRoleCapabilities,
 } from '@/features/.server/auth/better-auth-roles.constant';
 import {
 	auth,
@@ -67,13 +67,13 @@ import type { Route } from './+types/home.layout';
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
 	let session: Session | null = null;
-	let permissions: Permissions = EMPTY_PERMISSIONS;
+	let roleCapabilities: SessionRoleCapabilities = EMPTY_ROLE_CAPABILITIES;
 
 	try {
 		session = await auth.api.getSession({
 			headers: request.headers,
 		});
-		permissions = getPermissionsByRole(session?.user.role);
+		roleCapabilities = getRoleCapabilitiesByRole(session?.user.role);
 	} catch (error) {
 		console.error('Error fetching session:', error);
 		throw error;
@@ -83,7 +83,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 		throw redirect(localizeHref('/auth/login'));
 	}
 
-	return { ...session, permissions };
+	return { ...session, roleCapabilities };
 };
 
 function UserMenu({ session }: { session: Session }) {
@@ -226,7 +226,7 @@ function HomeSidebar() {
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 
-						{session.permissions.products.includes('list') && (
+						{session.roleCapabilities.products.canList && (
 							<SidebarMenuItem>
 								<SidebarMenuButton
 									render={<Link to={localizeHref('/products')} />}
@@ -241,7 +241,7 @@ function HomeSidebar() {
 							</SidebarMenuItem>
 						)}
 
-						{session.permissions.orders.includes('list') && (
+						{session.roleCapabilities.orders.canList && (
 							<SidebarMenuItem>
 								<SidebarMenuButton
 									render={<Link to={localizeHref('/orders')} />}
@@ -264,7 +264,7 @@ function HomeSidebar() {
 							</SidebarMenuItem>
 						)}
 
-						{session.permissions.customers.includes('list') && (
+						{session.roleCapabilities.customers.canList && (
 							<SidebarMenuItem>
 								<SidebarMenuButton
 									render={<Link to={localizeHref('/customers')} />}
@@ -281,7 +281,7 @@ function HomeSidebar() {
 							</SidebarMenuItem>
 						)}
 
-						{session.permissions.user.includes('list') && (
+						{session.roleCapabilities.users.canList && (
 							<SidebarMenuItem>
 								<SidebarMenuButton
 									render={<Link to={localizeHref('/users')} />}

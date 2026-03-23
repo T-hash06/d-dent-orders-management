@@ -1,10 +1,9 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import {
-	assertHasAnyPermission,
+	assertCanAny,
 	buildEntityActions,
 	canReadAllCustomers,
 	canReadAssignedCustomers,
-	hasPermission,
 } from '@/features/.server/auth/authorization.lib';
 import { customers } from '@/features/.server/customers/customer.schema';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
@@ -12,21 +11,24 @@ import { orders } from '@/features/.server/orders/order.schema';
 import { procedures } from '@/features/.server/trpc/trpc.init';
 
 export const getCustomers = procedures.auth.query(async ({ ctx }) => {
-	assertHasAnyPermission(ctx.permissions, [
-		{ customers: ['list-all'] },
-		{ customers: ['list-assigned'] },
+	assertCanAny(ctx.ability, [
+		{
+			action: 'list-all',
+			subjectType: 'Customer',
+		},
+		{
+			action: 'list-assigned',
+			subjectType: 'Customer',
+			subjectValue: { assignedToUserId: ctx.user.id },
+		},
 	]);
-	const canUpdateCustomers = hasPermission(ctx.permissions, {
-		customers: ['update'],
-	});
-	const canDeleteCustomers = hasPermission(ctx.permissions, {
-		customers: ['delete'],
-	});
-	const shouldScopeToAssigned =
-		!canReadAllCustomers(ctx.permissions) &&
-		canReadAssignedCustomers(ctx.permissions);
 
-	const rows = !shouldScopeToAssigned
+	const canUpdateCustomers = ctx.ability.can('update', 'Customer');
+	const canDeleteCustomers = ctx.ability.can('delete', 'Customer');
+	const canReadAll = canReadAllCustomers(ctx.ability);
+	const canReadAssigned = canReadAssignedCustomers(ctx.ability, ctx.user.id);
+
+	const rows = canReadAll
 		? await db.select().from(customers)
 		: await db
 				.selectDistinct({
@@ -42,7 +44,11 @@ export const getCustomers = procedures.auth.query(async ({ ctx }) => {
 				})
 				.from(customers)
 				.innerJoin(orders, eq(orders.customerId, customers.id))
-				.where(eq(orders.assignedToUserId, ctx.user.id));
+				.where(
+					canReadAssigned
+						? eq(orders.assignedToUserId, ctx.user.id)
+						: sql`1 = 0`,
+				);
 
 	return rows.map((customer) => ({
 		...customer,

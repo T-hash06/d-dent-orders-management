@@ -60,7 +60,7 @@ function toMonthKey(value: Date) {
 
 export default function HomeRoute() {
 	const trpc = useTRPC();
-	const { permissions } = useSession();
+	const { roleCapabilities } = useSession();
 	const locale = getLocale();
 	const currency = useMemo(
 		() =>
@@ -87,25 +87,25 @@ export default function HomeRoute() {
 		[locale],
 	);
 
-	const canReadOverviewAll = permissions.analytics.includes('overview-all');
+	const canReadOverviewAll = roleCapabilities.analytics.groups.overview.all;
 	const canReadOverviewAssigned =
-		permissions.analytics.includes('overview-assigned');
+		roleCapabilities.analytics.groups.overview.assigned;
 	const canReadOverview = canReadOverviewAll || canReadOverviewAssigned;
 	const canReadOrdersPerformance =
-		permissions.analytics.includes('orders-performance-all') ||
-		permissions.analytics.includes('orders-performance-assigned');
+		roleCapabilities.analytics.groups['orders-performance'].all ||
+		roleCapabilities.analytics.groups['orders-performance'].assigned;
 	const canReadCustomersInsights =
-		permissions.analytics.includes('customers-insights-all') ||
-		permissions.analytics.includes('customers-insights-assigned');
+		roleCapabilities.analytics.groups['customers-insights'].all ||
+		roleCapabilities.analytics.groups['customers-insights'].assigned;
 	const canReadProductsInsights =
-		permissions.analytics.includes('products-insights-all') ||
-		permissions.analytics.includes('products-insights-assigned');
+		roleCapabilities.analytics.groups['products-insights'].all ||
+		roleCapabilities.analytics.groups['products-insights'].assigned;
 	const canReadRevenue =
-		permissions.analytics.includes('revenue-all') ||
-		permissions.analytics.includes('revenue-assigned');
+		roleCapabilities.analytics.groups.revenue.all ||
+		roleCapabilities.analytics.groups.revenue.assigned;
 	const canReadOperations =
-		permissions.analytics.includes('operations-all') ||
-		permissions.analytics.includes('operations-assigned');
+		roleCapabilities.analytics.groups.operations.all ||
+		roleCapabilities.analytics.groups.operations.assigned;
 	const statusChartConfig = {
 		total: {
 			label: m.homeTotalOrders(),
@@ -394,16 +394,16 @@ export default function HomeRoute() {
 	const hasAssignableOrders = assignedPending.length > 0;
 
 	const quickActions = [
-		permissions.orders.includes('list')
+		roleCapabilities.orders.canList
 			? { href: '/orders', label: m.navOrders() }
 			: null,
-		permissions.products.includes('list')
+		roleCapabilities.products.canList
 			? { href: '/products', label: m.navProducts() }
 			: null,
-		permissions.customers.includes('list')
+		roleCapabilities.customers.canList
 			? { href: '/customers', label: m.navCustomers() }
 			: null,
-		permissions.user.includes('list')
+		roleCapabilities.users.canList
 			? { href: '/users', label: m.navUsers() }
 			: null,
 	].flatMap((item) => (item ? [item] : []));

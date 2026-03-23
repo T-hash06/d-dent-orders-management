@@ -31,7 +31,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import type { User } from '@/features/.server/users/user.types';
+import type { GetUsersResponse } from '@/features/.server/users/user.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import { isUserRole, type UserRole } from '@/features/users/domain/user-role';
 
@@ -51,11 +51,11 @@ function getUserRoleLabel(role: string | null): string {
 }
 
 type UserColumnsProps = {
-	onView: (user: User) => void;
-	onEdit: (user: User) => void;
-	onDelete: (user: User) => void;
-	onSetRole: (user: User, role: UserRole) => void;
-	onToggleBan: (user: User, banned: boolean) => void;
+	onView: (user: GetUsersResponse) => void;
+	onEdit: (user: GetUsersResponse) => void;
+	onDelete: (user: GetUsersResponse) => void;
+	onSetRole: (user: GetUsersResponse, role: UserRole) => void;
+	onToggleBan: (user: GetUsersResponse, banned: boolean) => void;
 };
 
 export function getUserColumns({
@@ -64,7 +64,7 @@ export function getUserColumns({
 	onDelete,
 	onSetRole,
 	onToggleBan,
-}: UserColumnsProps): ColumnDef<User>[] {
+}: UserColumnsProps): ColumnDef<GetUsersResponse>[] {
 	return [
 		{
 			id: 'select',

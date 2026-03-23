@@ -11,12 +11,12 @@ import {
 	Separator,
 } from '@d-dentaditamentos/ui';
 import type { ReactNode } from 'react';
-import type { User } from '@/features/.server/users/user.types';
+import type { GetUsersResponse } from '@/features/.server/users/user.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import { getLocale } from '@/features/i18n/paraglide/runtime';
 
 type ViewUserDialogProps = {
-	user: User | null;
+	user: GetUsersResponse | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };

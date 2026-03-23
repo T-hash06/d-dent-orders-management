@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { assertHasPermission } from '@/features/.server/auth/authorization.lib';
+import { assertCan } from '@/features/.server/auth/authorization.lib';
 import {
 	ROLE_VALUES,
 	type Role,
@@ -26,7 +26,7 @@ const setUserRoleInput = z.object({
 export const setUserRole = procedures.auth
 	.input(setUserRoleInput)
 	.mutation(async ({ input, ctx }) => {
-		assertHasPermission(ctx.permissions, { user: ['set-role'] });
+		assertCan(ctx.ability, 'set-role', 'User');
 
 		const result = await auth.api.setRole({
 			headers: ctx.headers,

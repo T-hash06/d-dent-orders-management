@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { assertHasPermission } from '@/features/.server/auth/authorization.lib';
+import { assertCan } from '@/features/.server/auth/authorization.lib';
 import { auth } from '@/features/.server/auth/better-auth-server.lib';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
 import { procedures } from '@/features/.server/trpc/trpc.init';
@@ -26,7 +26,7 @@ const updateUserInput = z.object({
 export const updateUser = procedures.auth
 	.input(updateUserInput)
 	.mutation(async ({ input, ctx }) => {
-		assertHasPermission(ctx.permissions, { user: ['update'] });
+		assertCan(ctx.ability, 'update', 'User');
 
 		const result = await auth.api.adminUpdateUser({
 			headers: ctx.headers,

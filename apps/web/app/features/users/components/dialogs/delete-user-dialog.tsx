@@ -10,12 +10,12 @@ import {
 	toast,
 } from '@d-dentaditamentos/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { User } from '@/features/.server/users/user.types';
+import type { GetUsersResponse } from '@/features/.server/users/user.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import { useTRPC } from '@/features/trpc/trpc.context';
 
 type DeleteUserDialogProps = {
-	user: User | null;
+	user: GetUsersResponse | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };

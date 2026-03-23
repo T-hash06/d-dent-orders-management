@@ -3,7 +3,8 @@ import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import SuperJSON from 'superjson';
 import * as z from 'zod';
 import { ZodError } from 'zod';
-import { getPermissionsByRole } from '@/features/.server/auth/better-auth-roles.constant';
+import { defineAbilitiesForUser } from '@/features/.server/auth/authorization.lib';
+import { getRoleCapabilitiesByRole } from '@/features/.server/auth/better-auth-roles.constant';
 import { auth } from '@/features/.server/auth/better-auth-server.lib';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
 import { m } from '@/features/i18n/paraglide/messages';
@@ -12,13 +13,15 @@ export const createTRPCContext = async (ctx: FetchCreateContextFnOptions) => {
 	const session = await auth.api.getSession({
 		headers: ctx.req.headers,
 	});
-	const permissions = getPermissionsByRole(session?.user.role);
+	const ability = defineAbilitiesForUser(session?.user);
+	const roleCapabilities = getRoleCapabilitiesByRole(session?.user.role);
 
 	return {
 		headers: ctx.req.headers,
 		session: session?.session,
 		user: session?.user,
-		permissions,
+		ability,
+		roleCapabilities,
 	};
 };
 
@@ -130,7 +133,8 @@ const authProcedure = publicProcedure.use(({ ctx, next }) => {
 			headers: ctx.headers,
 			session: ctx.session,
 			user: ctx.user,
-			permissions: ctx.permissions,
+			ability: ctx.ability,
+			roleCapabilities: ctx.roleCapabilities,
 		},
 	});
 });

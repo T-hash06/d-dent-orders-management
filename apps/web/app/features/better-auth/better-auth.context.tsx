@@ -1,12 +1,12 @@
 import { createContext, useContext } from 'react';
-import type { Permissions } from '@/features/.server/auth/better-auth-roles.constant';
+import type { SessionRoleCapabilities } from '@/features/.server/auth/better-auth-roles.constant';
 import type { Session } from '@/features/.server/auth/better-auth-server.lib';
 
 export type SessionContextType =
 	| {
 			user: Session['user'];
 			session: Session['session'];
-			permissions: Permissions;
+			roleCapabilities: SessionRoleCapabilities;
 	  }
 	| undefined;
 

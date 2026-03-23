@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import * as z from 'zod';
 import {
-	assertHasAnyPermission,
+	assertCanAny,
 	buildOrderActions,
 	forbiddenError,
 } from '@/features/.server/auth/authorization.lib';
@@ -106,11 +106,25 @@ const updateOrderInput = z.object({
 export const updateOrder = procedures.auth
 	.input(updateOrderInput)
 	.mutation(async ({ input, ctx }) => {
-		assertHasAnyPermission(ctx.permissions, [
-			{ orders: ['update-all'] },
-			{ orders: ['update-assigned'] },
-			{ orders: ['update-item-details-all'] },
-			{ orders: ['update-item-details-assigned'] },
+		assertCanAny(ctx.ability, [
+			{
+				action: 'update-all',
+				subjectType: 'Order',
+			},
+			{
+				action: 'update-assigned',
+				subjectType: 'Order',
+				subjectValue: { assignedToUserId: ctx.user.id },
+			},
+			{
+				action: 'update-item-details-all',
+				subjectType: 'Order',
+			},
+			{
+				action: 'update-item-details-assigned',
+				subjectType: 'Order',
+				subjectValue: { assignedToUserId: ctx.user.id },
+			},
 		]);
 
 		return db.transaction(async (tx) => {
@@ -124,7 +138,7 @@ export const updateOrder = procedures.auth
 			}
 
 			const orderActions = buildOrderActions({
-				permissions: ctx.permissions,
+				ability: ctx.ability,
 				userId: ctx.user.id,
 				assignedToUserId: currentOrder.assignedToUserId,
 			});

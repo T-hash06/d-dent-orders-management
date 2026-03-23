@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import * as z from 'zod';
-import { assertHasPermission } from '@/features/.server/auth/authorization.lib';
+import { assertCan } from '@/features/.server/auth/authorization.lib';
 import { auth } from '@/features/.server/auth/better-auth-server.lib';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
 import { procedures } from '@/features/.server/trpc/trpc.init';
@@ -21,7 +21,7 @@ const setUserBanStatusInput = z.object({
 export const setUserBanStatus = procedures.auth
 	.input(setUserBanStatusInput)
 	.mutation(async ({ input, ctx }) => {
-		assertHasPermission(ctx.permissions, { user: ['ban'] });
+		assertCan(ctx.ability, 'ban', 'User');
 
 		if (input.userId === ctx.user.id) {
 			throw new TRPCError({

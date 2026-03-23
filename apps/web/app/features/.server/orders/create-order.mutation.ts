@@ -1,8 +1,7 @@
 import * as z from 'zod';
 import {
-	assertHasPermission,
+	assertCan,
 	forbiddenError,
-	hasPermission,
 } from '@/features/.server/auth/authorization.lib';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import { orderItems, orders } from '@/features/.server/orders/order.schema';
@@ -98,19 +97,14 @@ const createOrderInput = z.object({
 export const createOrder = procedures.auth
 	.input(createOrderInput)
 	.mutation(async ({ input, ctx }) => {
-		assertHasPermission(ctx.permissions, {
-			orders: ['create'],
-		});
+		assertCan(ctx.ability, 'create', 'Order');
 		if (
 			input.paymentStatus !== 'pending' &&
-			!hasPermission(ctx.permissions, { orders: ['update-payment-status'] })
+			!ctx.ability.can('update-payment-status', 'Order')
 		) {
 			throw forbiddenError();
 		}
-		if (
-			input.status === 'cancelled' &&
-			!hasPermission(ctx.permissions, { orders: ['cancel'] })
-		) {
+		if (input.status === 'cancelled' && !ctx.ability.can('cancel', 'Order')) {
 			throw forbiddenError();
 		}
 

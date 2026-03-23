@@ -110,3 +110,12 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
 		references: [users.id],
 	}),
 }));
+
+export type User = typeof users.$inferSelect;
+export type Session = typeof sessions.$inferSelect;
+export type Account = typeof accounts.$inferSelect;
+export type Verification = typeof verifications.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type NewSession = typeof sessions.$inferInsert;
+export type NewAccount = typeof accounts.$inferInsert;
+export type NewVerification = typeof verifications.$inferInsert;

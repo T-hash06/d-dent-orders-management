@@ -223,16 +223,14 @@ const fuzzyFilter: FilterFn<Order> = (row, columnId, filterValue, addMeta) => {
 };
 
 const OrdersRouteHeader = () => {
-	const { permissions } = useSession();
+	const { roleCapabilities } = useSession();
 
 	return (
 		<PageHeader
 			title={m.ordersTitle()}
 			description={m.ordersDescription()}
 			action={
-				permissions.orders.includes('create') ? (
-					<CreateOrderDialog />
-				) : undefined
+				roleCapabilities.orders.canCreate ? <CreateOrderDialog /> : undefined
 			}
 		/>
 	);

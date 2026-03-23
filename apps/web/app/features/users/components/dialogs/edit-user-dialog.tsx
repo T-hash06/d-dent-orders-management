@@ -17,7 +17,7 @@ import {
 } from '@d-dentaditamentos/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type SubmitEvent, useCallback, useEffect } from 'react';
-import type { User } from '@/features/.server/users/user.types';
+import type { GetUsersResponse } from '@/features/.server/users/user.types';
 import { m } from '@/features/i18n/paraglide/messages';
 import { useTRPC } from '@/features/trpc/trpc.context';
 import {
@@ -26,7 +26,7 @@ import {
 } from '@/features/users/forms/edit-user.form';
 
 type EditUserDialogProps = {
-	user: User | null;
+	user: GetUsersResponse | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };

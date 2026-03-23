@@ -2,9 +2,8 @@ import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import * as z from 'zod';
 import {
-	assertHasAnyPermission,
+	assertCanAny,
 	forbiddenError,
-	hasPermission,
 } from '@/features/.server/auth/authorization.lib';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import { orders } from '@/features/.server/orders/order.schema';
@@ -25,13 +24,21 @@ const completeOrderInput = z.object({
 export const completeOrder = procedures.auth
 	.input(completeOrderInput)
 	.mutation(async ({ input, ctx }) => {
-		assertHasAnyPermission(ctx.permissions, [
-			{ orders: ['update-status-all'] },
-			{ orders: ['update-status-assigned'] },
+		assertCanAny(ctx.ability, [
+			{
+				action: 'update-status-all',
+				subjectType: 'Order',
+			},
+			{
+				action: 'update-status-assigned',
+				subjectType: 'Order',
+				subjectValue: { assignedToUserId: ctx.user.id },
+			},
 		]);
-		const canUpdateAnyOrderStatus = hasPermission(ctx.permissions, {
-			orders: ['update-status-all'],
-		});
+		const canUpdateAnyOrderStatus = ctx.ability.can(
+			'update-status-all',
+			'Order',
+		);
 
 		return db.transaction(async (tx) => {
 			const [order] = await tx

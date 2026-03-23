@@ -55,7 +55,7 @@ import { useTRPC } from '@/features/trpc/trpc.context';
 export function CreateOrderDialog() {
 	const [open, setOpen] = useState(false);
 	const [datePickerOpen, setDatePickerOpen] = useState(false);
-	const { permissions } = useSession();
+	const { roleCapabilities } = useSession();
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
 
@@ -113,10 +113,8 @@ export function CreateOrderDialog() {
 	);
 
 	const isLoading = createMutation.isPending;
-	const canEditPaymentStatus = permissions.orders.includes(
-		'update-payment-status',
-	);
-	const canCancelOrder = permissions.orders.includes('cancel');
+	const canEditPaymentStatus = roleCapabilities.orders.canUpdatePaymentStatus;
+	const canCancelOrder = roleCapabilities.orders.canCancel;
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>

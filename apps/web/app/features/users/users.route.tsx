@@ -40,7 +40,7 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { PageHeader } from '@/components/layout/page-header';
 import { StatBar } from '@/components/ui/stat-bar';
-import type { User } from '@/features/.server/users/user.types';
+import type { GetUsersResponse } from '@/features/.server/users/user.types';
 import { useSession } from '@/features/better-auth/better-auth.context';
 import { m } from '@/features/i18n/paraglide/messages';
 import { useTRPC } from '@/features/trpc/trpc.context';
@@ -56,9 +56,9 @@ interface UserStoreState {
 	columnVisibility: VisibilityState;
 	rowSelection: Record<string, boolean>;
 	searchTerm: string;
-	viewUser: User | null;
-	editUser: User | null;
-	deleteUser: User | null;
+	viewUser: GetUsersResponse | null;
+	editUser: GetUsersResponse | null;
+	deleteUser: GetUsersResponse | null;
 }
 
 interface UserStoreActions {
@@ -67,9 +67,9 @@ interface UserStoreActions {
 	setColumnVisibility: OnChangeFn<VisibilityState>;
 	setRowSelection: OnChangeFn<Record<string, boolean>>;
 	setSearchTerm: (searchTerm: string) => void;
-	setViewUser: (user: User | null) => void;
-	setEditUser: (user: User | null) => void;
-	setDeleteUser: (user: User | null) => void;
+	setViewUser: (user: GetUsersResponse | null) => void;
+	setEditUser: (user: GetUsersResponse | null) => void;
+	setDeleteUser: (user: GetUsersResponse | null) => void;
 }
 
 const useUserStore = create<UserStoreState & UserStoreActions>((set) => ({
@@ -117,17 +117,17 @@ const useUserStore = create<UserStoreState & UserStoreActions>((set) => ({
 	setDeleteUser: (deleteUser) => set({ deleteUser }),
 }));
 
-const emptyUsersFallback: User[] = [];
+const emptyUsersFallback: GetUsersResponse[] = [];
 
 const UsersRouteHeader = () => {
-	const { permissions } = useSession();
+	const { roleCapabilities } = useSession();
 
 	return (
 		<PageHeader
 			title={m.usersTitle()}
 			description={m.usersDescription()}
 			action={
-				permissions.user.includes('create') ? <CreateUserDialog /> : undefined
+				roleCapabilities.users.canCreate ? <CreateUserDialog /> : undefined
 			}
 		/>
 	);

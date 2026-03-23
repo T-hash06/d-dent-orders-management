@@ -1,11 +1,10 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import * as z from 'zod';
 import {
-	assertHasAnyPermission,
+	assertCanAny,
 	buildEntityActions,
 	canReadAllCustomers,
 	canReadAssignedCustomers,
-	hasPermission,
 } from '@/features/.server/auth/authorization.lib';
 import { customers } from '@/features/.server/customers/customer.schema';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
@@ -27,21 +26,24 @@ const getCustomerByIdInput = z.object({
 export const getCustomerById = procedures.auth
 	.input(getCustomerByIdInput)
 	.query(async ({ input, ctx }) => {
-		assertHasAnyPermission(ctx.permissions, [
-			{ customers: ['list-all'] },
-			{ customers: ['list-assigned'] },
+		assertCanAny(ctx.ability, [
+			{
+				action: 'list-all',
+				subjectType: 'Customer',
+			},
+			{
+				action: 'list-assigned',
+				subjectType: 'Customer',
+				subjectValue: { assignedToUserId: ctx.user.id },
+			},
 		]);
-		const canUpdateCustomers = hasPermission(ctx.permissions, {
-			customers: ['update'],
-		});
-		const canDeleteCustomers = hasPermission(ctx.permissions, {
-			customers: ['delete'],
-		});
-		const shouldScopeToAssigned =
-			!canReadAllCustomers(ctx.permissions) &&
-			canReadAssignedCustomers(ctx.permissions);
 
-		const [customer] = !shouldScopeToAssigned
+		const canUpdateCustomers = ctx.ability.can('update', 'Customer');
+		const canDeleteCustomers = ctx.ability.can('delete', 'Customer');
+		const canReadAll = canReadAllCustomers(ctx.ability);
+		const canReadAssigned = canReadAssignedCustomers(ctx.ability, ctx.user.id);
+
+		const [customer] = canReadAll
 			? await db.select().from(customers).where(eq(customers.id, input.id))
 			: await db
 					.select({
@@ -60,7 +62,9 @@ export const getCustomerById = procedures.auth
 					.where(
 						and(
 							eq(customers.id, input.id),
-							eq(orders.assignedToUserId, ctx.user.id),
+							canReadAssigned
+								? eq(orders.assignedToUserId, ctx.user.id)
+								: sql`1 = 0`,
 						),
 					);
 

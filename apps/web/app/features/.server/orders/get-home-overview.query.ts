@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import {
-	assertHasAnyPermission,
-	assertHasPermission,
+	assertCan,
+	assertCanAny,
 	canAccessAnalyticsGroup,
 	canBeAssignedOrder,
 	canReadAllOrders,
@@ -14,30 +14,45 @@ import { procedures } from '@/features/.server/trpc/trpc.init';
 import { isOrderLate } from '@/features/orders/domain/order-status';
 
 export const getHomeOverview = procedures.auth.query(async ({ ctx }) => {
-	assertHasPermission(ctx.permissions, { analytics: ['list'] });
-	assertHasAnyPermission(ctx.permissions, [
-		{ analytics: ['overview-all'] },
-		{ analytics: ['overview-assigned'] },
+	assertCan(ctx.ability, 'list', 'Analytics');
+	assertCanAny(ctx.ability, [
+		{
+			action: 'overview-all',
+			subjectType: 'Analytics',
+		},
+		{
+			action: 'overview-assigned',
+			subjectType: 'Analytics',
+		},
 	]);
-	assertHasAnyPermission(ctx.permissions, [
-		{ orders: ['list-all'] },
-		{ orders: ['list-assigned'] },
+	assertCanAny(ctx.ability, [
+		{
+			action: 'list-all',
+			subjectType: 'Order',
+		},
+		{
+			action: 'list-assigned',
+			subjectType: 'Order',
+			subjectValue: {
+				assignedToUserId: ctx.user.id,
+			},
+		},
 	]);
 	const canReadOverviewAll = canAccessAnalyticsGroup(
-		ctx.permissions,
+		ctx.ability,
 		'overview',
 		'all',
 	);
 	const canReadOverviewAssigned = canAccessAnalyticsGroup(
-		ctx.permissions,
+		ctx.ability,
 		'overview',
 		'assigned',
 	);
 	const shouldScopeToAssigned =
 		!canReadOverviewAll &&
 		canReadOverviewAssigned &&
-		!canReadAllOrders(ctx.permissions) &&
-		canReadAssignedOrders(ctx.permissions);
+		!canReadAllOrders(ctx.ability) &&
+		canReadAssignedOrders(ctx.ability, ctx.user.id);
 
 	const allOrders = await db
 		.select()
@@ -59,7 +74,7 @@ export const getHomeOverview = procedures.auth.query(async ({ ctx }) => {
 			.length,
 	};
 
-	const assignedPendingOrders = canBeAssignedOrder(ctx.permissions)
+	const assignedPendingOrders = canBeAssignedOrder(ctx.ability, ctx.user.id)
 		? await db
 				.select()
 				.from(orders)

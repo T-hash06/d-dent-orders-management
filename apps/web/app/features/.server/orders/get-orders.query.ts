@@ -1,20 +1,19 @@
 import { and, eq, gte, lt, lte, ne } from 'drizzle-orm';
 import * as z from 'zod';
 import {
-	assertHasAnyPermission,
+	assertCanAny,
 	buildOrderActions,
-	canReadAllOrders,
-	canReadAssignedOrders,
+	buildOrderScopeWhere,
 } from '@/features/.server/auth/authorization.lib';
 import { customers } from '@/features/.server/customers/customer.schema';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import { orderItems, orders } from '@/features/.server/orders/order.schema';
 import { procedures } from '@/features/.server/trpc/trpc.init';
+import { ORDER_SHIPPING_STATUS_VALUES } from '@/features/orders/domain/order-shipping-status';
 import {
 	isOrderLate,
 	ORDER_STATUS_VALUES,
 } from '@/features/orders/domain/order-status';
-import { ORDER_SHIPPING_STATUS_VALUES } from '@/features/orders/domain/order-shipping-status';
 
 const getOrdersInput = z
 	.object({
@@ -29,22 +28,27 @@ const getOrdersInput = z
 export const getOrders = procedures.auth
 	.input(getOrdersInput)
 	.query(async ({ input, ctx }) => {
-		assertHasAnyPermission(ctx.permissions, [
-			{ orders: ['list-all'] },
-			{ orders: ['list-assigned'] },
+		assertCanAny(ctx.ability, [
+			{
+				action: 'list-all',
+				subjectType: 'Order',
+			},
+			{
+				action: 'list-assigned',
+				subjectType: 'Order',
+				subjectValue: { assignedToUserId: ctx.user.id },
+			},
 		]);
-		const shouldScopeToAssigned =
-			!canReadAllOrders(ctx.permissions) &&
-			canReadAssignedOrders(ctx.permissions);
 
 		const ordersRows = await db
 			.select()
 			.from(orders)
 			.where(
 				and(
-					shouldScopeToAssigned
-						? eq(orders.assignedToUserId, ctx.user.id)
-						: undefined,
+					buildOrderScopeWhere({
+						ability: ctx.ability,
+						userId: ctx.user.id,
+					}),
 					input?.lateOnly ? ne(orders.status, 'completed') : undefined,
 					input?.lateOnly ? ne(orders.status, 'cancelled') : undefined,
 					input?.lateOnly
@@ -94,7 +98,7 @@ export const getOrders = procedures.auth
 					customer,
 					items,
 					actions: buildOrderActions({
-						permissions: ctx.permissions,
+						ability: ctx.ability,
 						userId: ctx.user.id,
 						assignedToUserId: order.assignedToUserId,
 					}),

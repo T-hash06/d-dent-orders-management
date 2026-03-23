@@ -1,11 +1,9 @@
-import { and, eq, getTableColumns, sql } from 'drizzle-orm';
+import { and, eq, getTableColumns } from 'drizzle-orm';
 import * as z from 'zod';
 import {
-	assertHasAnyPermission,
+	assertCanAny,
 	buildEntityActions,
-	canReadAllProducts,
-	canReadAssignedProducts,
-	hasPermission,
+	buildProductAssignedWhere,
 } from '@/features/.server/auth/authorization.lib';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
 import {
@@ -29,28 +27,24 @@ const getProductByIdInput = z.object({
 export const getProductById = procedures.auth
 	.input(getProductByIdInput)
 	.query(async ({ input, ctx }) => {
-		assertHasAnyPermission(ctx.permissions, [
-			{ products: ['list-all'] },
-			{ products: ['list-assigned'] },
+		assertCanAny(ctx.ability, [
+			{
+				action: 'list-all',
+				subjectType: 'Product',
+			},
+			{
+				action: 'list-assigned',
+				subjectType: 'Product',
+				subjectValue: { assignedToUserId: ctx.user.id },
+			},
 		]);
-		const canUpdateProducts = hasPermission(ctx.permissions, {
-			products: ['update'],
-		});
-		const canDeleteProducts = hasPermission(ctx.permissions, {
-			products: ['delete'],
-		});
+		const canUpdateProducts = ctx.ability.can('update', 'Product');
+		const canDeleteProducts = ctx.ability.can('delete', 'Product');
 
-		const inAssignedOrderScope =
-			!canReadAllProducts(ctx.permissions) &&
-			canReadAssignedProducts(ctx.permissions)
-				? sql`EXISTS (
-				SELECT 1
-				FROM order_items oi
-				JOIN orders o ON oi.order_id = o.id
-				WHERE oi.product_id = ${products.id}
-				  AND o.assigned_to_user_id = ${ctx.user.id}
-			)`
-				: undefined;
+		const inAssignedOrderScope = buildProductAssignedWhere({
+			ability: ctx.ability,
+			userId: ctx.user.id,
+		});
 
 		const [product] = await db
 			.select({

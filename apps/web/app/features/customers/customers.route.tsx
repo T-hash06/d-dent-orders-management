@@ -119,14 +119,14 @@ const useCustomerStore = create<CustomerStoreState & CustomerStoreActions>(
 const emptyCustomersFallback: Customer[] = [];
 
 const CustomersRouteHeader = () => {
-	const { permissions } = useSession();
+	const { roleCapabilities } = useSession();
 
 	return (
 		<PageHeader
 			title={m.customersTitle()}
 			description={m.customersDescription()}
 			action={
-				permissions.customers.includes('create') ? (
+				roleCapabilities.customers.canCreate ? (
 					<CreateCustomerDialog />
 				) : undefined
 			}

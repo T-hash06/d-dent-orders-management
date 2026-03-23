@@ -1,10 +1,9 @@
 import { and, eq } from 'drizzle-orm';
 import * as z from 'zod';
 import {
-	assertHasAnyPermission,
+	assertCanAny,
 	buildOrderActions,
-	canReadAllOrders,
-	canReadAssignedOrders,
+	buildOrderScopeWhere,
 } from '@/features/.server/auth/authorization.lib';
 import { customers } from '@/features/.server/customers/customer.schema';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
@@ -27,13 +26,17 @@ const getOrderByIdInput = z.object({
 export const getOrderById = procedures.auth
 	.input(getOrderByIdInput)
 	.query(async ({ input, ctx }) => {
-		assertHasAnyPermission(ctx.permissions, [
-			{ orders: ['list-all'] },
-			{ orders: ['list-assigned'] },
+		assertCanAny(ctx.ability, [
+			{
+				action: 'list-all',
+				subjectType: 'Order',
+			},
+			{
+				action: 'list-assigned',
+				subjectType: 'Order',
+				subjectValue: { assignedToUserId: ctx.user.id },
+			},
 		]);
-		const shouldScopeToAssigned =
-			!canReadAllOrders(ctx.permissions) &&
-			canReadAssignedOrders(ctx.permissions);
 
 		const [order] = await db
 			.select()
@@ -41,9 +44,10 @@ export const getOrderById = procedures.auth
 			.where(
 				and(
 					eq(orders.id, input.id),
-					shouldScopeToAssigned
-						? eq(orders.assignedToUserId, ctx.user.id)
-						: undefined,
+					buildOrderScopeWhere({
+						ability: ctx.ability,
+						userId: ctx.user.id,
+					}),
 				),
 			);
 
@@ -80,7 +84,7 @@ export const getOrderById = procedures.auth
 			customer,
 			items,
 			actions: buildOrderActions({
-				permissions: ctx.permissions,
+				ability: ctx.ability,
 				userId: ctx.user.id,
 				assignedToUserId: order.assignedToUserId,
 			}),

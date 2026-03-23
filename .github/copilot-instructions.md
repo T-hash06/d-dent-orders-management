@@ -56,11 +56,11 @@ pnpm --filter @d-dentaditamentos/web machine-translate
   - server init/context/error formatting in `.server/trpc/trpc.init.ts`
   - app router composition in `.server/trpc/trpc.router.ts`
   - client/provider wiring in `features/trpc/trpc.provider.tsx` and `trpc.context.tsx`.
-- Auth uses **better-auth** with Drizzle adapter (`better-auth-server.lib.ts`) and role definitions in `better-auth-roles.constant.ts`.
-- Authorization uses a **typed permission system**:
-  - permission statements/roles: `apps/web/app/features/.server/auth/better-auth-roles.constant.ts`
-  - authorization helpers: `apps/web/app/features/.server/auth/authorization.lib.ts`
-  - request-scoped permission resolution: `apps/web/app/features/.server/trpc/trpc.init.ts`
+- Auth uses **better-auth** with Drizzle adapter (`better-auth-server.lib.ts`) and role definitions/statements in `better-auth-roles.constant.ts`.
+- Authorization uses **CASL abilities**:
+  - CASL model + typed helpers/scopes: `apps/web/app/features/.server/auth/authorization.lib.ts`
+  - role capabilities for session/UI: `apps/web/app/features/.server/auth/better-auth-roles.constant.ts`
+  - request-scoped ability/capabilities resolution: `apps/web/app/features/.server/trpc/trpc.init.ts`
 - Database uses **Drizzle + LibSQL/SQLite**. Schema discovery for migrations is `app/features/.server/**/*.schema.ts`.
 - i18n uses **inlang/paraglide**:
   - source config in `app/features/i18n/project.inlang/`
@@ -101,19 +101,24 @@ pnpm --filter @d-dentaditamentos/web machine-translate
 
 ## Authorization system (important)
 
-- **Source of truth** is permissions, not role-name conditionals in business logic.
-  - Roles map to permissions in `better-auth-roles.constant.ts`.
-  - Procedures should check permissions through helpers in `authorization.lib.ts`.
-- **Do not** call `auth.api.userHasPermission` inside each query/mutation.
-  - Permissions are resolved once per request in `createTRPCContext` and exposed as `ctx.permissions`.
-  - Use `assertHasPermission`, `assertHasAnyPermission`, `hasPermission`, and scope helpers (`canReadAll*`, `canReadAssigned*`).
-- Current permission model includes **scope-aware actions** (for example):
+- **Source of truth** for app authorization is CASL (`ctx.ability`), not role-name conditionals or static permission arrays.
+  - Keep role-to-statement mappings in `better-auth-roles.constant.ts` for better-auth admin plugin integration.
+  - Keep app business authorization in CASL definitions/helpers from `authorization.lib.ts`.
+- **Do not** call `auth.api.userHasPermission` inside queries/mutations.
+  - Resolve abilities once per request in `createTRPCContext` and use `ctx.ability`.
+  - Use CASL helpers: `assertCan`, `assertCanAny`, and scope helpers (`canReadAll*`, `canReadAssigned*`, `build*ScopeWhere`).
+- Scope-aware order actions must remain explicit and typed:
   - list: `list-all`, `list-assigned`
-  - orders updates: `update-all`, `update-assigned`
-  - orders assignment: `assign-all`, `assign-assigned`
-  - orders status: `update-status-all`, `update-status-assigned`
+  - updates: `update-all`, `update-assigned`
+  - assignment: `assign-all`, `assign-assigned`
+  - status: `update-status-all`, `update-status-assigned`
+  - item details: `update-item-details-all`, `update-item-details-assigned`
+- Query/mutation filtering should enforce ability scopes at DB level (all vs assigned), not only UI hiding.
+- Frontend should consume `session.roleCapabilities` and backend-provided `actions`; do not reimplement business rules in UI.
+- Legacy RBAC API is removed:
+  - do not introduce/use `ctx.permissions`, `getPermissionsByRole`, `EMPTY_PERMISSIONS`, `assertHasPermission`, `assertHasAnyPermission`, or `hasPermission`.
 - When adding/changing capabilities:
-  1. Update `statement` and role mappings in `better-auth-roles.constant.ts`.
-  2. Reuse/extend typed helpers in `authorization.lib.ts` (keep type-safety; avoid `Record<string, string[]>`).
-  3. Apply permission checks in server procedures using `ctx.permissions`.
-  4. Keep frontend as a consumer of backend-provided `actions`, not as the authority for business rules.
+  1. Update `statement`/role mappings in `better-auth-roles.constant.ts` (and role capability mapping if needed).
+  2. Update CASL ability definitions and typed helpers in `authorization.lib.ts`.
+  3. Apply checks and scoped filters in procedures through `ctx.ability`.
+  4. Expose/consume capability changes via `roleCapabilities` and backend `actions`.

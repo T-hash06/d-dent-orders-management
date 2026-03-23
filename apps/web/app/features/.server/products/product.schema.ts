@@ -62,3 +62,8 @@ export const productsRelations = relations(products, ({ one }) => ({
 		references: [users.id],
 	}),
 }));
+
+export type Product = typeof products.$inferSelect;
+export type NewProduct = typeof products.$inferInsert;
+export type ProductCategory = typeof productCategories.$inferSelect;
+export type NewProductCategory = typeof productCategories.$inferInsert;

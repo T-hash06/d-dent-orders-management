@@ -36,3 +36,6 @@ export const customersRelations = relations(customers, ({ one }) => ({
 		references: [users.id],
 	}),
 }));
+
+export type Customer = typeof customers.$inferSelect;
+export type NewCustomer = typeof customers.$inferInsert;

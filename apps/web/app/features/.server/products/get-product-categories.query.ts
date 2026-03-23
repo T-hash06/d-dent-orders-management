@@ -1,7 +1,8 @@
 import { and, asc, count, eq, like, sql } from 'drizzle-orm';
 import * as z from 'zod';
 import {
-	assertHasAnyPermission,
+	assertCanAny,
+	buildProductAssignedWhere,
 	canReadAllProducts,
 } from '@/features/.server/auth/authorization.lib';
 import { db } from '@/features/.server/drizzle/drizzle.connection';
@@ -21,13 +22,21 @@ const getProductCategoriesInput = z
 export const getProductCategories = procedures.auth
 	.input(getProductCategoriesInput)
 	.query(async ({ input, ctx }) => {
-		assertHasAnyPermission(ctx.permissions, [
-			{ products: ['list-all'] },
-			{ products: ['list-assigned'] },
+		assertCanAny(ctx.ability, [
+			{
+				action: 'list-all',
+				subjectType: 'Product',
+			},
+			{
+				action: 'list-assigned',
+				subjectType: 'Product',
+				subjectValue: { assignedToUserId: ctx.user.id },
+			},
 		]);
 		const search = input?.search;
+		const canReadAll = canReadAllProducts(ctx.ability);
 
-		const categories = canReadAllProducts(ctx.permissions)
+		const categories = canReadAll
 			? await db
 					.select({
 						id: productCategories.id,
@@ -53,7 +62,10 @@ export const getProductCategories = procedures.auth
 					.innerJoin(orders, eq(orders.id, orderItems.orderId))
 					.where(
 						and(
-							eq(orders.assignedToUserId, ctx.user.id),
+							buildProductAssignedWhere({
+								ability: ctx.ability,
+								userId: ctx.user.id,
+							}),
 							search ? like(productCategories.name, `%${search}%`) : undefined,
 						),
 					)

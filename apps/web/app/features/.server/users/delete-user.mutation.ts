@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import * as z from 'zod';
-import { assertHasPermission } from '@/features/.server/auth/authorization.lib';
+import { assertCan } from '@/features/.server/auth/authorization.lib';
 import { auth } from '@/features/.server/auth/better-auth-server.lib';
 import { getLocaleFromAsyncStorage } from '@/features/.server/trpc/locale.context';
 import { procedures } from '@/features/.server/trpc/trpc.init';
@@ -20,7 +20,7 @@ const deleteUserInput = z.object({
 export const deleteUser = procedures.auth
 	.input(deleteUserInput)
 	.mutation(async ({ input, ctx }) => {
-		assertHasPermission(ctx.permissions, { user: ['delete'] });
+		assertCan(ctx.ability, 'delete', 'User');
 
 		if (input.userId === ctx.user.id) {
 			throw new TRPCError({

@@ -17,6 +17,7 @@
 		"type-check": "react-router typegen && tsc"
 	},
 	"dependencies": {
+		"@casl/ability": "^6.8.0",
 		"@d-dentaditamentos/ui": "workspace:*",
 		"@hugeicons/core-free-icons": "^4.0.0",
 		"@hugeicons/react": "^1.1.5",

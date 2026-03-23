@@ -340,7 +340,7 @@ export function getOrderColumns({
 						: order.status === 'in_progress'
 							? m.orderStatusInProgress()
 							: order.status === 'cancelled'
-							? m.orderStatusCancelled()
+								? m.orderStatusCancelled()
 								: m.orderStatusPending();
 				const currentShippingStatus =
 					order.shippingStatus === 'to_ship'

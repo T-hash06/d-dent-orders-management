@@ -137,14 +137,14 @@ const emptyProductsFallback: ProductPreview[] = [];
 const emptyProductCategoriesFallback: ProductCategory[] = [];
 
 const ProductsRouteHeader = () => {
-	const { permissions } = useSession();
+	const { roleCapabilities } = useSession();
 
 	return (
 		<PageHeader
 			title={m.productsTitle()}
 			description={m.productsDescription()}
 			action={
-				permissions.products.includes('create') ? (
+				roleCapabilities.products.canCreate ? (
 					<CreateProductDialog />
 				) : undefined
 			}
