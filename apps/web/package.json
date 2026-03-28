@@ -20,7 +20,7 @@
 		"@casl/ability": "^6.8.0",
 		"@d-dentaditamentos/ui": "workspace:*",
 		"@hugeicons/core-free-icons": "^4.0.0",
-		"@hugeicons/react": "^1.1.5",
+		"@hugeicons/react": "^1.1.6",
 		"@libsql/client": "^0.17.0",
 		"@react-router/node": "7.13.1",
 		"@react-router/serve": "7.13.1",
