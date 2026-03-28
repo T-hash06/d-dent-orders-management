@@ -32,6 +32,7 @@ import {
 	Computer,
 	CustomerServiceIcon,
 	DashboardSquare01Icon,
+	Analytics01Icon,
 	Moon,
 	PackageDeliveredIcon,
 	PackageIcon,
@@ -63,6 +64,7 @@ import {
 	setLocale,
 } from '@/features/i18n/paraglide/runtime';
 import { useTRPC } from '@/features/trpc/trpc.context';
+import { canAccessAdminBusinessIntelligence } from '@/features/analytics/utils/can-access-admin-business-intelligence';
 import type { Route } from './+types/home.layout';
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
@@ -177,7 +179,11 @@ function HomeSidebar() {
 	const isOrders = normalizedPath.startsWith('/orders');
 	const isCustomers = normalizedPath.startsWith('/customers');
 	const isUsers = normalizedPath.startsWith('/users');
-	const isHome = !isProducts && !isOrders && !isCustomers && !isUsers;
+	const isAnalytics = normalizedPath.startsWith('/analytics');
+	const isHome = !isProducts && !isOrders && !isCustomers && !isUsers && !isAnalytics;
+	const canAccessAnalytics = canAccessAdminBusinessIntelligence(
+		session.roleCapabilities,
+	);
 
 	const trpc = useTRPC();
 	const { data: homeOverview } = useQuery(
@@ -264,6 +270,21 @@ function HomeSidebar() {
 							</SidebarMenuItem>
 						)}
 
+						{canAccessAnalytics && (
+							<SidebarMenuItem>
+								<SidebarMenuButton
+									render={<Link to={localizeHref('/analytics')} />}
+									className="transition-colors"
+									isActive={isAnalytics}
+									tooltip={m.navAnalytics()}
+									nativeButton={false}
+								>
+									<HugeiconsIcon icon={Analytics01Icon} className="size-4" />
+									<span>{m.navAnalytics()}</span>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+						)}
+
 						{session.roleCapabilities.customers.canList && (
 							<SidebarMenuItem>
 								<SidebarMenuButton
@@ -319,6 +340,7 @@ function HomeInset() {
 	const isOrders = normalizedPath.startsWith('/orders');
 	const isCustomers = normalizedPath.startsWith('/customers');
 	const isUsers = normalizedPath.startsWith('/users');
+	const isAnalytics = normalizedPath.startsWith('/analytics');
 
 	const headerTitle = isProducts
 		? m.productsTitle()
@@ -328,7 +350,9 @@ function HomeInset() {
 				? m.customersTitle()
 				: isUsers
 					? m.usersTitle()
-					: m.homePageTitle();
+					: isAnalytics
+						? m.businessIntelligenceTitle()
+						: m.homePageTitle();
 
 	const headerDescription = isProducts
 		? m.productsDescription()
@@ -338,7 +362,9 @@ function HomeInset() {
 				? m.customersDescription()
 				: isUsers
 					? m.usersDescription()
-					: m.homePageDescription();
+					: isAnalytics
+						? m.businessIntelligenceDescription()
+						: m.homePageDescription();
 
 	return (
 		<SidebarInset>
