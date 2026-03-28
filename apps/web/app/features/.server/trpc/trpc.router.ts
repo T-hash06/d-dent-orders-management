@@ -1,5 +1,5 @@
-import { getAnalyticsCapabilities } from '@/features/.server/analytics/get-analytics-capabilities.query';
 import { getAdminBusinessIntelligence } from '@/features/.server/analytics/get-admin-business-intelligence.query';
+import { getAnalyticsCapabilities } from '@/features/.server/analytics/get-analytics-capabilities.query';
 import { createCustomer } from '@/features/.server/customers/create-customer.mutation';
 import { deleteCustomer } from '@/features/.server/customers/delete-customer.mutation';
 import { getCustomerById } from '@/features/.server/customers/get-customer-by-id.query';

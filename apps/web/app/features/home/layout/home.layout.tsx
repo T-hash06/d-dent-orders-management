@@ -28,11 +28,11 @@ import {
 	SidebarTrigger,
 } from '@d-dentaditamentos/ui';
 import {
+	Analytics01Icon,
 	CaduceusIcon,
 	Computer,
 	CustomerServiceIcon,
 	DashboardSquare01Icon,
-	Analytics01Icon,
 	Moon,
 	PackageDeliveredIcon,
 	PackageIcon,
@@ -52,6 +52,7 @@ import {
 	auth,
 	type Session,
 } from '@/features/.server/auth/better-auth-server.lib';
+import { canAccessAdminBusinessIntelligence } from '@/features/analytics/utils/can-access-admin-business-intelligence';
 import {
 	SessionProvider,
 	useSession,
@@ -64,7 +65,6 @@ import {
 	setLocale,
 } from '@/features/i18n/paraglide/runtime';
 import { useTRPC } from '@/features/trpc/trpc.context';
-import { canAccessAdminBusinessIntelligence } from '@/features/analytics/utils/can-access-admin-business-intelligence';
 import type { Route } from './+types/home.layout';
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
@@ -180,7 +180,8 @@ function HomeSidebar() {
 	const isCustomers = normalizedPath.startsWith('/customers');
 	const isUsers = normalizedPath.startsWith('/users');
 	const isAnalytics = normalizedPath.startsWith('/analytics');
-	const isHome = !isProducts && !isOrders && !isCustomers && !isUsers && !isAnalytics;
+	const isHome =
+		!isProducts && !isOrders && !isCustomers && !isUsers && !isAnalytics;
 	const canAccessAnalytics = canAccessAdminBusinessIntelligence(
 		session.roleCapabilities,
 	);

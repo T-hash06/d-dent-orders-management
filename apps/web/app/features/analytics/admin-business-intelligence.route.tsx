@@ -73,11 +73,7 @@ const TAB_OPERATIONS = 'operations';
 const TAB_COMMERCIAL = 'commercial';
 const TAB_TEAM = 'team';
 
-function kpiDeltaBadge({
-	value,
-}: {
-	value: number;
-}) {
+function kpiDeltaBadge({ value }: { value: number }) {
 	return (
 		<Badge variant={value >= 0 ? 'secondary' : 'destructive'}>
 			<HugeiconsIcon
@@ -151,33 +147,39 @@ export default function AdminBusinessIntelligenceRoute() {
 	}
 
 	const summary = data?.summary;
-	const monthlyRevenueData = (data?.charts.monthlyRevenue ?? []).map((month) => ({
-		month: monthFormatter.format(month.labelDate),
-		revenue: Math.round(month.revenue),
-		orders: month.orders,
-	}));
-	const ordersByStatusData = (data?.charts.ordersByStatus ?? []).map((item) => ({
-		status:
-			item.status === 'pending'
-				? m.orderStatusPending()
-				: item.status === 'in_progress'
-					? m.orderStatusInProgress()
-					: item.status === 'completed'
-						? m.orderStatusCompleted()
-						: m.orderStatusCancelled(),
-		count: item.count,
-		fill: ORDER_STATUS_COLOR_BY_KEY[item.status],
-	}));
-	const ordersByShippingData = (data?.charts.ordersByShippingStatus ?? []).map((item) => ({
-		status:
-			item.status === 'to_ship'
-				? m.orderShippingStatusToShip()
-				: item.status === 'shipped'
-					? m.orderShippingStatusShipped()
-					: m.orderShippingStatusDelivered(),
-		count: item.count,
-		fill: SHIPPING_STATUS_COLOR_BY_KEY[item.status],
-	}));
+	const monthlyRevenueData = (data?.charts.monthlyRevenue ?? []).map(
+		(month) => ({
+			month: monthFormatter.format(month.labelDate),
+			revenue: Math.round(month.revenue),
+			orders: month.orders,
+		}),
+	);
+	const ordersByStatusData = (data?.charts.ordersByStatus ?? []).map(
+		(item) => ({
+			status:
+				item.status === 'pending'
+					? m.orderStatusPending()
+					: item.status === 'in_progress'
+						? m.orderStatusInProgress()
+						: item.status === 'completed'
+							? m.orderStatusCompleted()
+							: m.orderStatusCancelled(),
+			count: item.count,
+			fill: ORDER_STATUS_COLOR_BY_KEY[item.status],
+		}),
+	);
+	const ordersByShippingData = (data?.charts.ordersByShippingStatus ?? []).map(
+		(item) => ({
+			status:
+				item.status === 'to_ship'
+					? m.orderShippingStatusToShip()
+					: item.status === 'shipped'
+						? m.orderShippingStatusShipped()
+						: m.orderShippingStatusDelivered(),
+			count: item.count,
+			fill: SHIPPING_STATUS_COLOR_BY_KEY[item.status],
+		}),
+	);
 	const paymentSplitData = (data?.charts.paymentSplit ?? []).map((item) => ({
 		key: item.status,
 		status:
@@ -240,15 +242,24 @@ export default function AdminBusinessIntelligenceRoute() {
 							className="w-full overflow-x-auto overflow-y-hidden rounded-lg border border-border bg-card px-0 py-4 sm:w-fit sm:overflow-visible"
 							variant="default"
 						>
-							<TabsTrigger value={TAB_OVERVIEW} className="min-h-11 px-2 ml-4 sm:ml-0 sm:min-h-8">
-								<HugeiconsIcon icon={ChartScatterIcon} data-icon="inline-start" />
+							<TabsTrigger
+								value={TAB_OVERVIEW}
+								className="min-h-11 px-2 ml-4 sm:ml-0 sm:min-h-8"
+							>
+								<HugeiconsIcon
+									icon={ChartScatterIcon}
+									data-icon="inline-start"
+								/>
 								<span>{m.businessIntelligenceTabOverview()}</span>
 							</TabsTrigger>
 							<TabsTrigger
 								value={TAB_OPERATIONS}
 								className="min-h-11 px-2 sm:min-h-8"
 							>
-								<HugeiconsIcon icon={DeliveryTruck01Icon} data-icon="inline-start" />
+								<HugeiconsIcon
+									icon={DeliveryTruck01Icon}
+									data-icon="inline-start"
+								/>
 								<span>{m.businessIntelligenceTabOperations()}</span>
 							</TabsTrigger>
 							<TabsTrigger
@@ -261,7 +272,10 @@ export default function AdminBusinessIntelligenceRoute() {
 								/>
 								<span>{m.businessIntelligenceTabCommercial()}</span>
 							</TabsTrigger>
-							<TabsTrigger value={TAB_TEAM} className="min-h-11 px-2 sm:min-h-8">
+							<TabsTrigger
+								value={TAB_TEAM}
+								className="min-h-11 px-2 sm:min-h-8"
+							>
 								<HugeiconsIcon icon={UserGroupIcon} data-icon="inline-start" />
 								<span>{m.businessIntelligenceTabTeam()}</span>
 							</TabsTrigger>
@@ -298,7 +312,9 @@ export default function AdminBusinessIntelligenceRoute() {
 									<CardHeader className="gap-3">
 										<div className="flex flex-wrap items-start justify-between gap-3">
 											<div className="space-y-1">
-												<CardTitle>{m.businessIntelligenceRevenueTrendTitle()}</CardTitle>
+												<CardTitle>
+													{m.businessIntelligenceRevenueTrendTitle()}
+												</CardTitle>
 												<CardDescription>
 													{m.businessIntelligenceRevenueTrendDescription()}
 												</CardDescription>
@@ -345,7 +361,9 @@ export default function AdminBusinessIntelligenceRoute() {
 													{m.businessIntelligenceCurrentMonthRevenue()}
 												</p>
 												<p className="mt-1 text-sm font-semibold tabular-nums">
-													{currencyFormatter.format(summary.currentMonthRevenue)}
+													{currencyFormatter.format(
+														summary.currentMonthRevenue,
+													)}
 												</p>
 											</div>
 											<div className="rounded-lg border border-border bg-card px-3 py-2.5">
@@ -353,7 +371,9 @@ export default function AdminBusinessIntelligenceRoute() {
 													{m.businessIntelligencePreviousMonthRevenue()}
 												</p>
 												<p className="mt-1 text-sm font-semibold tabular-nums">
-													{currencyFormatter.format(summary.previousMonthRevenue)}
+													{currencyFormatter.format(
+														summary.previousMonthRevenue,
+													)}
 												</p>
 											</div>
 											<div className="rounded-lg border border-border bg-card px-3 py-2.5">
@@ -372,7 +392,9 @@ export default function AdminBusinessIntelligenceRoute() {
 
 								<Card className="xl:col-span-2">
 									<CardHeader>
-										<CardTitle>{m.businessIntelligenceBusinessSnapshotTitle()}</CardTitle>
+										<CardTitle>
+											{m.businessIntelligenceBusinessSnapshotTitle()}
+										</CardTitle>
 										<CardDescription>
 											{m.businessIntelligenceBusinessSnapshotDescription()}
 										</CardDescription>
@@ -400,7 +422,9 @@ export default function AdminBusinessIntelligenceRoute() {
 													{m.businessIntelligenceCustomersWithOrdersStat()}
 												</p>
 												<p className="mt-1 text-lg font-semibold tabular-nums">
-													{numberFormatter.format(summary.totalCustomersWithOrders)}
+													{numberFormatter.format(
+														summary.totalCustomersWithOrders,
+													)}
 												</p>
 											</div>
 											<div className="rounded-lg border border-border p-3">
@@ -414,7 +438,9 @@ export default function AdminBusinessIntelligenceRoute() {
 										</div>
 										<div className="rounded-lg border border-border p-3">
 											<div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-												<p>{m.businessIntelligenceCustomerConcentrationLabel()}</p>
+												<p>
+													{m.businessIntelligenceCustomerConcentrationLabel()}
+												</p>
 												<p>{`${summary.customerConcentrationPercent.toFixed(1)}%`}</p>
 											</div>
 											<Progress value={summary.customerConcentrationPercent} />
@@ -433,7 +459,9 @@ export default function AdminBusinessIntelligenceRoute() {
 									},
 									{
 										label: m.businessIntelligenceDueNextWeekStat(),
-										value: numberFormatter.format(summary.deliveriesDueNextWeek),
+										value: numberFormatter.format(
+											summary.deliveriesDueNextWeek,
+										),
 									},
 									{
 										label: m.businessIntelligenceOverdueUnpaidStat(),
@@ -453,7 +481,9 @@ export default function AdminBusinessIntelligenceRoute() {
 							<div className="grid gap-5 xl:grid-cols-3">
 								<Card>
 									<CardHeader>
-										<CardTitle>{m.businessIntelligenceOrderMixTitle()}</CardTitle>
+										<CardTitle>
+											{m.businessIntelligenceOrderMixTitle()}
+										</CardTitle>
 										<CardDescription>
 											{m.businessIntelligenceOrderMixDescription()}
 										</CardDescription>
@@ -488,7 +518,9 @@ export default function AdminBusinessIntelligenceRoute() {
 
 								<Card>
 									<CardHeader>
-										<CardTitle>{m.businessIntelligenceShippingTitle()}</CardTitle>
+										<CardTitle>
+											{m.businessIntelligenceShippingTitle()}
+										</CardTitle>
 										<CardDescription>
 											{m.businessIntelligenceShippingDescription()}
 										</CardDescription>
@@ -523,7 +555,9 @@ export default function AdminBusinessIntelligenceRoute() {
 
 								<Card>
 									<CardHeader>
-										<CardTitle>{m.businessIntelligenceOperationsCapacityTitle()}</CardTitle>
+										<CardTitle>
+											{m.businessIntelligenceOperationsCapacityTitle()}
+										</CardTitle>
 										<CardDescription>
 											{m.businessIntelligenceOperationsCapacityDescription()}
 										</CardDescription>
@@ -558,7 +592,9 @@ export default function AdminBusinessIntelligenceRoute() {
 
 							<Card>
 								<CardHeader>
-									<CardTitle>{m.businessIntelligenceRiskRadarTitle()}</CardTitle>
+									<CardTitle>
+										{m.businessIntelligenceRiskRadarTitle()}
+									</CardTitle>
 									<CardDescription>
 										{m.businessIntelligenceRiskRadarDescription()}
 									</CardDescription>
@@ -641,7 +677,9 @@ export default function AdminBusinessIntelligenceRoute() {
 							<div className="grid gap-5 xl:grid-cols-3">
 								<Card className="xl:col-span-1">
 									<CardHeader>
-										<CardTitle>{m.businessIntelligenceCashflowTitle()}</CardTitle>
+										<CardTitle>
+											{m.businessIntelligenceCashflowTitle()}
+										</CardTitle>
 										<CardDescription>
 											{m.businessIntelligenceCashflowDescription()}
 										</CardDescription>
@@ -685,7 +723,9 @@ export default function AdminBusinessIntelligenceRoute() {
 
 								<Card className="xl:col-span-2">
 									<CardHeader>
-										<CardTitle>{m.businessIntelligenceTopCustomersTitle()}</CardTitle>
+										<CardTitle>
+											{m.businessIntelligenceTopCustomersTitle()}
+										</CardTitle>
 										<CardDescription>
 											{m.businessIntelligenceTopCustomersDescription()}
 										</CardDescription>
@@ -724,7 +764,9 @@ export default function AdminBusinessIntelligenceRoute() {
 							<div className="grid gap-5 xl:grid-cols-2">
 								<Card>
 									<CardHeader>
-										<CardTitle>{m.businessIntelligenceTopProductsTitle()}</CardTitle>
+										<CardTitle>
+											{m.businessIntelligenceTopProductsTitle()}
+										</CardTitle>
 										<CardDescription>
 											{m.businessIntelligenceTopProductsDescription()}
 										</CardDescription>
@@ -761,7 +803,9 @@ export default function AdminBusinessIntelligenceRoute() {
 
 								<Card>
 									<CardHeader>
-										<CardTitle>{m.businessIntelligenceCustomerGrowthTitle()}</CardTitle>
+										<CardTitle>
+											{m.businessIntelligenceCustomerGrowthTitle()}
+										</CardTitle>
 										<CardDescription>
 											{m.businessIntelligenceCustomerGrowthDescription()}
 										</CardDescription>
@@ -840,7 +884,9 @@ export default function AdminBusinessIntelligenceRoute() {
 
 							<Card>
 								<CardHeader>
-									<CardTitle>{m.businessIntelligenceTeamPerformanceTitle()}</CardTitle>
+									<CardTitle>
+										{m.businessIntelligenceTeamPerformanceTitle()}
+									</CardTitle>
 									<CardDescription>
 										{m.businessIntelligenceTeamPerformanceDescription()}
 									</CardDescription>
@@ -853,11 +899,17 @@ export default function AdminBusinessIntelligenceRoute() {
 												className="grid grid-cols-1 gap-3 rounded-lg border border-border p-3 sm:grid-cols-[minmax(0,1fr)_auto]"
 											>
 												<div className="min-w-0">
-													<p className="truncate text-sm font-medium">{member.name}</p>
+													<p className="truncate text-sm font-medium">
+														{member.name}
+													</p>
 													<p className="text-xs text-muted-foreground">
 														{m.businessIntelligenceTeamOrdersSummary({
-															total: numberFormatter.format(member.assignedOrders),
-															completed: numberFormatter.format(member.completedOrders),
+															total: numberFormatter.format(
+																member.assignedOrders,
+															),
+															completed: numberFormatter.format(
+																member.completedOrders,
+															),
 														})}
 													</p>
 												</div>

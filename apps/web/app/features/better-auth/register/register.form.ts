@@ -86,4 +86,4 @@ const { useAppForm, withForm } = createFormHook({
 	formContext: formContext,
 });
 
-export { useAppForm, withForm, registerFormCodec, REGISTER_FORM_OPTIONS };
+export { REGISTER_FORM_OPTIONS, registerFormCodec, useAppForm, withForm };

@@ -10,7 +10,10 @@ export default [
 	...prefix(':locale?', [
 		layout('features/home/layout/home.layout.tsx', [
 			index('features/home/route/home.route.tsx'),
-			route('analytics', 'features/analytics/admin-business-intelligence.route.tsx'),
+			route(
+				'analytics',
+				'features/analytics/admin-business-intelligence.route.tsx',
+			),
 			route('products', 'features/products/products.route.tsx'),
 			route('customers', 'features/customers/customers.route.tsx'),
 			route('orders', 'features/orders/orders.route.tsx'),
