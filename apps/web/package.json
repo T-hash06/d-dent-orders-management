@@ -50,7 +50,7 @@
 		"@inlang/cli": "^3.0.0",
 		"@inlang/paraglide-js": "^2.13.2",
 		"@react-router/dev": "7.13.1",
-		"@tailwindcss/vite": "^4.2.1",
+		"@tailwindcss/vite": "^4.2.2",
 		"@types/node": "^25.3.5",
 		"@types/react": "^19.2.7",
 		"@types/react-dom": "^19.2.3",
