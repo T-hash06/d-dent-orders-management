@@ -60,7 +60,7 @@
 		"tsx": "^4.21.0",
 		"typescript": "^5.9.2",
 		"vite": "^7.1.7",
-		"vite-plugin-babel": "^1.5.1",
+		"vite-plugin-babel": "^1.6.0",
 		"vite-tsconfig-paths": "^6.1.1"
 	}
 }
